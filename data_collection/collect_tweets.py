@@ -1,0 +1,290 @@
+from dotenv import load_dotenv
+import tweepy
+import tweepy.errors
+from pymongo import MongoClient, ASCENDING
+from pymongo.errors import BulkWriteError, WriteError
+import os, logging, time
+from datetime import datetime
+from ssl_smtp_handler import SSLSMTPHandler
+from tqdm import tqdm
+import uuid
+
+# load environment variables (like the Twitter API bearer token) from .env file
+load_dotenv()
+
+# main logger
+main_logger = logging.getLogger("main")
+
+# maximum number of tweets to pull
+MAX_TWEETS = 1e7
+
+
+class TweetSaverClient(tweepy.StreamingClient):
+    """A class that saves tweets into our MongoDB collection."""
+
+    def __init__(
+        self,
+        tweets_collection,
+        users_collection,
+        places_collection,
+        media_collection,
+        polls_collection,
+        *args,
+        **kwargs
+    ):
+        super(TweetSaverClient, self).__init__(*args, **kwargs)
+        self.tweets_collection = tweets_collection
+        self.users_collection = users_collection
+        self.places_collection = places_collection
+        self.media_collection = media_collection
+        self.polls_collection = polls_collection
+
+    def on_tweet(self, tweet):
+        data = tweet.data
+        data["queried_at"] = datetime.utcnow().isoformat()
+        self.tweets_collection.insert_one(data)
+
+    def insert(self, collection, data):
+        try:
+            collection.insert_many(data, ordered=False)
+        except BulkWriteError as e:
+            for write_error in e.details["writeErrors"]:
+                # just log if duplicate key error occurs
+                if write_error["code"] == 11000:
+                    main_logger.error(write_error)
+                else:
+                    raise WriteError(
+                        error=write_error["errmsg"], code=write_error["code"]
+                    )
+
+    def on_includes(self, includes):
+        queried_at = datetime.utcnow().isoformat()
+        keys = includes.keys()
+        if "users" in keys:
+            user_data = [user.data for user in includes["users"]]
+            self.insert(self.users_collection, user_data)
+        if "places" in keys:
+            place_data = [place.data for place in includes["places"]]
+            self.insert(self.places_collection, place_data)
+        if "media" in keys:
+            media_data = [
+                dict(media.data, **{"queried_at": queried_at})
+                for media in includes["media"]
+            ]
+            self.insert(self.media_collection, media_data)
+        if "polls" in keys:
+            polls_data = [
+                dict(poll.data, **{"queried_at": queried_at})
+                for poll in includes["polls"]
+            ]
+            self.insert(self.polls_collection, polls_data)
+
+    def on_closed(self, response):
+        main_logger.error("Closed stream with response: %s" % response)
+        return super().on_closed(response)
+
+    def on_exception(self, exception):
+        main_logger.error("Stream encountered exception: %s" % exception)
+        return super().on_exception(exception)
+
+
+def log_to_file(logger_name, logfile, level=None):
+    logger = logging.getLogger(logger_name)
+    if level is not None:
+        logger.setLevel(level)
+    handler = logging.FileHandler(filename=logfile, mode="w")
+    formatter = logging.Formatter(
+        "[%(levelname)s] %(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S"
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+
+def get_email_logger(subject):
+    email_logger = logging.getLogger("email")
+    email_logger.setLevel("INFO")
+
+    handler = SSLSMTPHandler(
+        mailhost="smtp.gmail.com",
+        fromaddr=os.environ["EMAIL_FROM"],
+        toaddrs=os.environ["EMAIL_TO"],
+        credentials=(os.environ["EMAIL_FROM"], os.environ["EMAIL_PASSWORD"]),
+        subject=subject,
+    )
+    handler.setLevel("INFO")
+    formatter = logging.Formatter(
+        "[%(levelname)s] %(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S"
+    )
+    handler.setFormatter(formatter)
+
+    email_logger.addHandler(handler)
+    return email_logger
+
+
+def stream_loop(streaming_client, count, max_count, restart, tweets_collection):
+    if not restart:
+        main_logger.info("Starting stream.")
+        backfill_minutes = None
+    else:
+        main_logger.info("Re-starting stream.")
+        backfill_minutes = (
+            5  # to make up for the data that we might have missed during the downtime
+        )
+
+    streaming_client.filter(
+        threaded=True,
+        expansions=[
+            "geo.place_id",
+            "author_id",
+            "attachments.media_keys",
+            "attachments.poll_ids",
+        ],
+        tweet_fields=[
+            "attachments",
+            "author_id",
+            "context_annotations",
+            "conversation_id",
+            "created_at",
+            "edit_controls",
+            "edit_history_tweet_ids",
+            "entities",
+            "geo",
+            "in_reply_to_user_id",
+            "lang",
+            "non_public_metrics",
+            "organic_metrics",
+            "possibly_sensitive",
+            "promoted_metrics",
+            "public_metrics",
+            "referenced_tweets",
+            "reply_settings",
+            "source",
+            "withheld",
+        ],
+        user_fields=[
+            "created_at",
+            "description",
+            "entities",
+            "location",
+            "pinned_tweet_id",
+            "profile_image_url",
+            "protected",
+            "public_metrics",
+            "url",
+            "verified",
+            "verified_type",
+            "withheld",
+        ],
+        place_fields=[
+            "contained_within",
+            "country",
+            "country_code",
+            "geo",
+            "name",
+            "place_type",
+        ],
+        media_fields=[
+            "alt_text",
+            "duration_ms",
+            "height",
+            "non_public_metrics",
+            "organic_metrics",
+            "preview_image_url",
+            "promoted_metrics",
+            "public_metrics",
+            "url",
+            "variants",
+            "width",
+        ],
+        poll_fields=["duration_minutes", "end_datetime", "voting_status"],
+        backfill_minutes=backfill_minutes,
+    )
+
+    with tqdm(total=max_count) as pbar:
+        pbar.update(count)
+        while streaming_client.running and count < max_count:
+            # check number of tweets every so often
+            time.sleep(60 * 5)
+            new_count = tweets_collection.estimated_document_count()
+            main_logger.info("Number of tweets in database: %d " % new_count)
+            delta = new_count - count
+            pbar.update(delta)
+            count = new_count
+
+    return count
+
+
+if __name__ == "__main__":
+    # setup logging
+    run_id = str(uuid.uuid1())
+    if not os.path.exists(run_id):
+        os.mkdir(run_id)
+    log_to_file("main", os.path.join(run_id, "main.log"), level=logging.INFO)
+    log_to_file("tweepy", os.path.join(run_id, "tweepy.log"), level=logging.INFO)
+    email_logger = get_email_logger(subject="collect_tweets.py")
+    email_logger.info("Started running. UUID: %s" % run_id)
+
+    # setup MongoDB
+    mongo_conn = MongoClient(os.environ["MONGO_CONN"])
+    db = mongo_conn.twitter  # our database
+    tweets_collection = db.tweets_collection
+    tweets_collection.create_index(
+        [("id", ASCENDING)], unique=True
+    )  # create index on tweet id
+    users_collection = db.users_collection
+    users_collection.create_index([("id", ASCENDING)], unique=True)
+    places_collection = db.places_collection
+    places_collection.create_index([("id", ASCENDING)], unique=True)
+    media_collection = db.media_collection
+    media_collection.create_index([("media_key", ASCENDING)], unique=True)
+    polls_collection = db.polls_collection
+    polls_collection.create_index([("id", ASCENDING)], unique=True)
+
+    # setup Twitter API client
+    streaming_client = TweetSaverClient(
+        tweets_collection=tweets_collection,
+        users_collection=users_collection,
+        places_collection=places_collection,
+        media_collection=media_collection,
+        polls_collection=polls_collection,
+        bearer_token=os.environ["BEARER_TOKEN"],
+        wait_on_rate_limit=True,
+    )
+
+    # clear all rules that were there before
+    response = streaming_client.get_rules()
+    if response.meta["result_count"] != 0:
+        rule_ids = [rule.id for rule in response.data]
+        streaming_client.delete_rules(ids=rule_ids)
+
+    # add filtering rule
+    stream_rule_string = "sample:1 followers_count:0 -is:retweet lang:en"
+    response = streaming_client.add_rules(tweepy.StreamRule(stream_rule_string))
+    main_logger.info(response)
+
+    # stream data
+    restart = False
+    count = tweets_collection.estimated_document_count()
+    while count < MAX_TWEETS:
+        count = stream_loop(
+            streaming_client,
+            count,
+            max_count=MAX_TWEETS,
+            restart=restart,
+            tweets_collection=tweets_collection,
+        )
+        if count < MAX_TWEETS:
+            email_logger.warning(
+                "Streaming client stopped running before we reached the desired number of tweets: %d / %d"
+                % (count, MAX_TWEETS)
+            )
+            restart = True
+
+    # after finishing, disconnect
+    if streaming_client.running:
+        streaming_client.disconnect()
+
+    main_logger.info(
+        "Finished running. Current number of tweets in database: %d" % (count)
+    )
+    email_logger.info("Finished running. UUID: %s" % run_id)
