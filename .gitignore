@@ -1,2 +1,5 @@
-.env/
+.env
 .vscode/
+.DS_Store
+artifacts/
+wandb/
