@@ -3,3 +3,5 @@
 .DS_Store
 artifacts/
 wandb/
+logs/
+*.log
