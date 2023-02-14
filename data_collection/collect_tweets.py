@@ -5,9 +5,9 @@ from pymongo import MongoClient, ASCENDING
 from pymongo.errors import BulkWriteError, WriteError
 import os, logging, time
 from datetime import datetime
-from ssl_smtp_handler import SSLSMTPHandler
 from tqdm import tqdm
 import uuid
+from collect_utils import log_to_file, get_email_logger
 
 # load environment variables (like the Twitter API bearer token) from .env file
 load_dotenv()
@@ -51,7 +51,7 @@ class TweetSaverClient(tweepy.StreamingClient):
             for write_error in e.details["writeErrors"]:
                 # just log if duplicate key error occurs
                 if write_error["code"] == 11000:
-                    main_logger.error(write_error)
+                    main_logger.debug(write_error)
                 else:
                     raise WriteError(
                         error=write_error["errmsg"], code=write_error["code"]
@@ -86,39 +86,6 @@ class TweetSaverClient(tweepy.StreamingClient):
     def on_exception(self, exception):
         main_logger.error("Stream encountered exception: %s" % exception)
         return super().on_exception(exception)
-
-
-def log_to_file(logger_name, logfile, level=None):
-    logger = logging.getLogger(logger_name)
-    if level is not None:
-        logger.setLevel(level)
-    handler = logging.FileHandler(filename=logfile, mode="w")
-    formatter = logging.Formatter(
-        "[%(levelname)s] %(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-
-def get_email_logger(subject):
-    email_logger = logging.getLogger("email")
-    email_logger.setLevel("INFO")
-
-    handler = SSLSMTPHandler(
-        mailhost="smtp.gmail.com",
-        fromaddr=os.environ["EMAIL_FROM"],
-        toaddrs=os.environ["EMAIL_TO"],
-        credentials=(os.environ["EMAIL_FROM"], os.environ["EMAIL_PASSWORD"]),
-        subject=subject,
-    )
-    handler.setLevel("INFO")
-    formatter = logging.Formatter(
-        "[%(levelname)s] %(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S"
-    )
-    handler.setFormatter(formatter)
-
-    email_logger.addHandler(handler)
-    return email_logger
 
 
 def stream_loop(streaming_client, count, max_count, restart, tweets_collection):
@@ -217,10 +184,13 @@ def stream_loop(streaming_client, count, max_count, restart, tweets_collection):
 if __name__ == "__main__":
     # setup logging
     run_id = str(uuid.uuid1())
-    if not os.path.exists(run_id):
-        os.mkdir(run_id)
-    log_to_file("main", os.path.join(run_id, "main.log"), level=logging.INFO)
-    log_to_file("tweepy", os.path.join(run_id, "tweepy.log"), level=logging.INFO)
+    log_path = os.path.join("logs", run_id)
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+    log_to_file(
+        "main", os.path.join(log_path, "collect_tweets.log"), level=logging.INFO
+    )
+    log_to_file("tweepy", os.path.join(log_path, "tweepy.log"), level=logging.INFO)
     email_logger = get_email_logger(subject="collect_tweets.py")
     email_logger.info("Started running. UUID: %s" % run_id)
 
