@@ -5,3 +5,5 @@ artifacts/
 wandb/
 logs/
 *.log
+__pycache__/
+test/converter_diffs/
