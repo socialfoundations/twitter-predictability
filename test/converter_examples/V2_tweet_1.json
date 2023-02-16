@@ -1,0 +1,289 @@
+{
+    "data": {
+        "possibly_sensitive": false,
+        "reply_settings": "everyone",
+        "entities": {
+            "urls": [
+                {
+                    "start": 30,
+                    "end": 53,
+                    "url": "https://t.co/WxPvRoqTR3",
+                    "expanded_url": "https://twitter.com/molly0xfff/status/1625906492120477709",
+                    "display_url": "twitter.com/molly0xfff/sta…"
+                }
+            ]
+        },
+        "id": "1626194750222094336",
+        "public_metrics": {
+            "retweet_count": 2,
+            "reply_count": 3,
+            "like_count": 35,
+            "quote_count": 0,
+            "impression_count": 3746
+        },
+        "lang": "en",
+        "author_id": "705850200473010178",
+        "referenced_tweets": [
+            {
+                "type": "quoted",
+                "id": "1625906492120477709"
+            }
+        ],
+        "conversation_id": "1626194750222094336",
+        "text": "::Cries in social scientist:: https://t.co/WxPvRoqTR3",
+        "created_at": "2023-02-16T12:20:16.000Z",
+        "edit_history_tweet_ids": [
+            "1626194750222094336"
+        ]
+    },
+    "includes": {
+        "users": [
+            {
+                "public_metrics": {
+                    "followers_count": 42471,
+                    "following_count": 4177,
+                    "tweet_count": 20887,
+                    "listed_count": 975
+                },
+                "protected": false,
+                "id": "705850200473010178",
+                "created_at": "2016-03-04T20:19:36.000Z",
+                "pinned_tweet_id": "1589241781107195909",
+                "url": "https://t.co/SGp7YE1v8Q",
+                "verified": false,
+                "entities": {
+                    "url": {
+                        "urls": [
+                            {
+                                "start": 0,
+                                "end": 23,
+                                "url": "https://t.co/SGp7YE1v8Q",
+                                "expanded_url": "http://www.rummanchowdhury.com",
+                                "display_url": "rummanchowdhury.com"
+                            }
+                        ]
+                    }
+                },
+                "description": "find me at ruchowdh@mastodon.social",
+                "username": "ruchowdh",
+                "name": "ruchowdh@mastodon.social",
+                "location": "Hardcore eng central ",
+                "profile_image_url": "https://pbs.twimg.com/profile_images/1293719046190272514/7jdYUQmy_normal.jpg"
+            },
+            {
+                "public_metrics": {
+                    "followers_count": 100106,
+                    "following_count": 1988,
+                    "tweet_count": 13165,
+                    "listed_count": 1189
+                },
+                "protected": false,
+                "id": "545445165",
+                "created_at": "2012-04-04T19:00:12.000Z",
+                "url": "https://t.co/rkdtU0QohJ",
+                "verified": false,
+                "entities": {
+                    "url": {
+                        "urls": [
+                            {
+                                "start": 0,
+                                "end": 23,
+                                "url": "https://t.co/rkdtU0QohJ",
+                                "expanded_url": "https://www.mollywhite.net/nothing-to-see-here-elon",
+                                "display_url": "mollywhite.net/nothing-to-see…"
+                            }
+                        ]
+                    },
+                    "description": {
+                        "urls": [
+                            {
+                                "start": 112,
+                                "end": 135,
+                                "url": "https://t.co/QPoSP8T1Cf",
+                                "expanded_url": "http://newsletter.mollywhite.net",
+                                "display_url": "newsletter.mollywhite.net"
+                            }
+                        ],
+                        "mentions": [
+                            {
+                                "start": 60,
+                                "end": 72,
+                                "username": "web3isgreat"
+                            },
+                            {
+                                "start": 90,
+                                "end": 101,
+                                "username": "HarvardLIL"
+                            }
+                        ]
+                    }
+                },
+                "description": "crypto researcher & critic, software engineer, wikipedian • @web3isgreat creator • fellow @HarvardLIL • writing https://t.co/QPoSP8T1Cf • \nshe/her",
+                "username": "molly0xFFF",
+                "name": "Molly White",
+                "location": "@molly0xfff@hachyderm.io",
+                "profile_image_url": "https://pbs.twimg.com/profile_images/1624591082494255104/BqIgOsLt_normal.jpg"
+            }
+        ],
+        "tweets": [
+            {
+                "possibly_sensitive": false,
+                "context_annotations": [
+                    {
+                        "domain": {
+                            "id": "46",
+                            "name": "Business Taxonomy",
+                            "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+                        },
+                        "entity": {
+                            "id": "1557696848252391426",
+                            "name": "Financial Services Business",
+                            "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to Banks, Credit cards, Insurance, Investments, Stocks "
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "47",
+                            "name": "Brand",
+                            "description": "Brands and Companies"
+                        },
+                        "entity": {
+                            "id": "1372588659346612225",
+                            "name": "Binance"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "66",
+                            "name": "Interests and Hobbies Category",
+                            "description": "A grouping of interests and hobbies entities, like Novelty Food or Destinations"
+                        },
+                        "entity": {
+                            "id": "913142676819648512",
+                            "name": "Cryptocurrencies",
+                            "description": "Cryptocurrency"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "781974596148793345",
+                            "name": "Business & finance"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "781974596794716162",
+                            "name": "Financial services"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "913142676819648512",
+                            "name": "Cryptocurrencies",
+                            "description": "Cryptocurrency"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "1390680741206368263",
+                            "name": "Cryptocurrency exchanges"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "1491481998862348291",
+                            "name": "Digital asset industry"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "1492162686204854274",
+                            "name": "Digital assets & cryptocurrency",
+                            "description": "Cryptocurrency"
+                        }
+                    }
+                ],
+                "reply_settings": "everyone",
+                "entities": {
+                    "urls": [
+                        {
+                            "start": 92,
+                            "end": 115,
+                            "url": "https://t.co/bct9mKy8sa",
+                            "expanded_url": "https://twitter.com/molly0xFFF/status/1625906492120477709/photo/1",
+                            "display_url": "pic.twitter.com/bct9mKy8sa",
+                            "media_key": "3_1625906414332915733"
+                        }
+                    ],
+                    "annotations": [
+                        {
+                            "start": 0,
+                            "end": 6,
+                            "probability": 0.6802,
+                            "type": "Other",
+                            "normalized_text": "binance"
+                        },
+                        {
+                            "start": 53,
+                            "end": 58,
+                            "probability": 0.7878,
+                            "type": "Other",
+                            "normalized_text": "crypto"
+                        }
+                    ]
+                },
+                "attachments": {
+                    "media_keys": [
+                        "3_1625906414332915733"
+                    ]
+                },
+                "id": "1625906492120477709",
+                "public_metrics": {
+                    "retweet_count": 150,
+                    "reply_count": 96,
+                    "like_count": 1535,
+                    "quote_count": 78,
+                    "impression_count": 173536
+                },
+                "lang": "en",
+                "author_id": "545445165",
+                "conversation_id": "1625906492120477709",
+                "text": "binance has produced a survey that found that buying crypto will totally help you get girls https://t.co/bct9mKy8sa",
+                "created_at": "2023-02-15T17:14:50.000Z",
+                "edit_history_tweet_ids": [
+                    "1625906492120477709"
+                ]
+            }
+        ]
+    }
+}
