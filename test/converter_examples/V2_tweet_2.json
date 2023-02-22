@@ -1,0 +1,438 @@
+{
+    "data": {
+        "reply_settings": "everyone",
+        "possibly_sensitive": false,
+        "conversation_id": "1628162063859126273",
+        "text": "@AlphaSignalAI @huggingface Smart move by AWS. They don’t have an OpenAI type relationship (though some of their ML, esp for inventory / warehousing is world class). \n\nWhen you can’t play with depth, play with width.",
+        "entities": {
+            "mentions": [
+                {
+                    "start": 0,
+                    "end": 14,
+                    "username": "AlphaSignalAI",
+                    "id": "931470139"
+                },
+                {
+                    "start": 15,
+                    "end": 27,
+                    "username": "huggingface",
+                    "id": "778764142412984320"
+                }
+            ]
+        },
+        "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 0,
+            "like_count": 15,
+            "quote_count": 2,
+            "impression_count": 4784
+        },
+        "author_id": "27213047",
+        "id": "1628166135760961538",
+        "context_annotations": [
+            {
+                "domain": {
+                    "id": "46",
+                    "name": "Business Taxonomy",
+                    "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+                },
+                "entity": {
+                    "id": "1557697333571112960",
+                    "name": "Technology Business",
+                    "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to softwares, apps, communication equipments, hardwares"
+                }
+            },
+            {
+                "domain": {
+                    "id": "45",
+                    "name": "Brand Vertical",
+                    "description": "Top level entities that describe a Brands industry"
+                },
+                "entity": {
+                    "id": "781974596706635776",
+                    "name": "Retail industry"
+                }
+            },
+            {
+                "domain": {
+                    "id": "30",
+                    "name": "Entities [Entity Service]",
+                    "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+                },
+                "entity": {
+                    "id": "783335558466506752",
+                    "name": "Online - Retail"
+                }
+            },
+            {
+                "domain": {
+                    "id": "47",
+                    "name": "Brand",
+                    "description": "Brands and Companies"
+                },
+                "entity": {
+                    "id": "10026792024",
+                    "name": "Amazon"
+                }
+            },
+            {
+                "domain": {
+                    "id": "48",
+                    "name": "Product",
+                    "description": "Products created by Brands.  Examples: Ford Explorer, Apple iPhone."
+                },
+                "entity": {
+                    "id": "10040695083",
+                    "name": "Amazon Web Services (AWS)"
+                }
+            }
+        ],
+        "referenced_tweets": [
+            {
+                "type": "replied_to",
+                "id": "1628162063859126273"
+            }
+        ],
+        "lang": "en",
+        "edit_history_tweet_ids": [
+            "1628166135760961538"
+        ],
+        "created_at": "2023-02-21T22:53:51.000Z",
+        "in_reply_to_user_id": "931470139"
+    },
+    "includes": {
+        "users": [
+            {
+                "pinned_tweet_id": "1615126840452042757",
+                "entities": {
+                    "url": {
+                        "urls": [
+                            {
+                                "start": 0,
+                                "end": 23,
+                                "url": "https://t.co/tHO57rKFoe",
+                                "expanded_url": "https://ntkris.substack.com",
+                                "display_url": "ntkris.substack.com"
+                            }
+                        ]
+                    },
+                    "description": {
+                        "urls": [
+                            {
+                                "start": 9,
+                                "end": 32,
+                                "url": "https://t.co/9TFqiReBsH",
+                                "expanded_url": "http://kili.so",
+                                "display_url": "kili.so"
+                            }
+                        ]
+                    }
+                },
+                "description": "Building https://t.co/9TFqiReBsH: Your copilot for customer success. Talks about SaaS, product and AI.",
+                "created_at": "2009-03-28T11:21:00.000Z",
+                "id": "27213047",
+                "username": "ntkris",
+                "url": "https://t.co/tHO57rKFoe",
+                "profile_image_url": "https://pbs.twimg.com/profile_images/1522874874980671489/cCqH9E4g_normal.jpg",
+                "protected": false,
+                "public_metrics": {
+                    "followers_count": 2927,
+                    "following_count": 873,
+                    "tweet_count": 9853,
+                    "listed_count": 81
+                },
+                "location": "Writing:",
+                "verified": false,
+                "name": "Krishna"
+            },
+            {
+                "pinned_tweet_id": "1618026300421332993",
+                "entities": {
+                    "url": {
+                        "urls": [
+                            {
+                                "start": 0,
+                                "end": 23,
+                                "url": "https://t.co/2z8fPxwTZl",
+                                "expanded_url": "https://AlphaSignal.ai",
+                                "display_url": "AlphaSignal.ai"
+                            }
+                        ]
+                    }
+                },
+                "description": "AI/ML Engineer • Ex-MILA • Founder of AlphaSignal: a weekly summary read by 50,000+ AI researchers/engineers. We use ML to identify top news, papers, repos.",
+                "created_at": "2012-11-07T07:19:36.000Z",
+                "id": "931470139",
+                "username": "AlphaSignalAI",
+                "url": "https://t.co/2z8fPxwTZl",
+                "profile_image_url": "https://pbs.twimg.com/profile_images/1599792074336964608/CobSHV8l_normal.jpg",
+                "protected": false,
+                "public_metrics": {
+                    "followers_count": 32019,
+                    "following_count": 398,
+                    "tweet_count": 1524,
+                    "listed_count": 527
+                },
+                "location": "Free Signup Here →",
+                "verified": false,
+                "name": "Lior⚡"
+            },
+            {
+                "pinned_tweet_id": "1523660456061116416",
+                "entities": {
+                    "url": {
+                        "urls": [
+                            {
+                                "start": 0,
+                                "end": 23,
+                                "url": "https://t.co/A337WqHDnG",
+                                "expanded_url": "https://huggingface.co",
+                                "display_url": "huggingface.co"
+                            }
+                        ]
+                    },
+                    "description": {
+                        "hashtags": [
+                            {
+                                "start": 38,
+                                "end": 55,
+                                "tag": "BlackLivesMatter"
+                            },
+                            {
+                                "start": 56,
+                                "end": 70,
+                                "tag": "stopasianhate"
+                            }
+                        ]
+                    }
+                },
+                "description": "The AI community building the future.\n#BlackLivesMatter #stopasianhate",
+                "created_at": "2016-09-22T01:13:35.000Z",
+                "id": "778764142412984320",
+                "username": "huggingface",
+                "url": "https://t.co/A337WqHDnG",
+                "profile_image_url": "https://pbs.twimg.com/profile_images/1348748676282388482/nr8ZuLBE_normal.jpg",
+                "protected": false,
+                "public_metrics": {
+                    "followers_count": 145160,
+                    "following_count": 159,
+                    "tweet_count": 5761,
+                    "listed_count": 2362
+                },
+                "location": "NYC and Paris and 🌏",
+                "verified": false,
+                "name": "Hugging Face"
+            }
+        ],
+        "tweets": [
+            {
+                "reply_settings": "everyone",
+                "possibly_sensitive": false,
+                "conversation_id": "1628162063859126273",
+                "text": "BREAKING: Amazon (AWS) partners with @HuggingFace for the next iteration of their BLOOM Large Language Model, as well as its open-source ChatGPT rivals.\n\nAWS will offer the startup’s products to customers who want to use AI tools as building blocks of their own applications.",
+                "entities": {
+                    "mentions": [
+                        {
+                            "start": 37,
+                            "end": 49,
+                            "username": "huggingface",
+                            "id": "778764142412984320"
+                        }
+                    ],
+                    "annotations": [
+                        {
+                            "start": 10,
+                            "end": 15,
+                            "probability": 0.958,
+                            "type": "Organization",
+                            "normalized_text": "Amazon"
+                        },
+                        {
+                            "start": 18,
+                            "end": 20,
+                            "probability": 0.3451,
+                            "type": "Organization",
+                            "normalized_text": "AWS"
+                        },
+                        {
+                            "start": 137,
+                            "end": 143,
+                            "probability": 0.7428,
+                            "type": "Other",
+                            "normalized_text": "ChatGPT"
+                        },
+                        {
+                            "start": 154,
+                            "end": 156,
+                            "probability": 0.4682,
+                            "type": "Organization",
+                            "normalized_text": "AWS"
+                        },
+                        {
+                            "start": 221,
+                            "end": 222,
+                            "probability": 0.4592,
+                            "type": "Organization",
+                            "normalized_text": "AI"
+                        }
+                    ]
+                },
+                "public_metrics": {
+                    "retweet_count": 180,
+                    "reply_count": 15,
+                    "like_count": 1293,
+                    "quote_count": 28,
+                    "impression_count": 170448
+                },
+                "author_id": "931470139",
+                "id": "1628162063859126273",
+                "context_annotations": [
+                    {
+                        "domain": {
+                            "id": "46",
+                            "name": "Business Taxonomy",
+                            "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+                        },
+                        "entity": {
+                            "id": "1557697333571112960",
+                            "name": "Technology Business",
+                            "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to softwares, apps, communication equipments, hardwares"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "48",
+                            "name": "Product",
+                            "description": "Products created by Brands.  Examples: Ford Explorer, Apple iPhone."
+                        },
+                        "entity": {
+                            "id": "1620189216029163524",
+                            "name": "ChatGPT"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "45",
+                            "name": "Brand Vertical",
+                            "description": "Top level entities that describe a Brands industry"
+                        },
+                        "entity": {
+                            "id": "781974596706635776",
+                            "name": "Retail industry"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "30",
+                            "name": "Entities [Entity Service]",
+                            "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+                        },
+                        "entity": {
+                            "id": "783335558466506752",
+                            "name": "Online - Retail"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "47",
+                            "name": "Brand",
+                            "description": "Brands and Companies"
+                        },
+                        "entity": {
+                            "id": "10026792024",
+                            "name": "Amazon"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "48",
+                            "name": "Product",
+                            "description": "Products created by Brands.  Examples: Ford Explorer, Apple iPhone."
+                        },
+                        "entity": {
+                            "id": "10040695083",
+                            "name": "Amazon Web Services (AWS)"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "48",
+                            "name": "Product",
+                            "description": "Products created by Brands.  Examples: Ford Explorer, Apple iPhone."
+                        },
+                        "entity": {
+                            "id": "10050907867",
+                            "name": "Amazon - AI",
+                            "description": "Amazon - AI"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "30",
+                            "name": "Entities [Entity Service]",
+                            "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+                        },
+                        "entity": {
+                            "id": "848920371311001600",
+                            "name": "Technology",
+                            "description": "Technology and computing"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "66",
+                            "name": "Interests and Hobbies Category",
+                            "description": "A grouping of interests and hobbies entities, like Novelty Food or Destinations"
+                        },
+                        "entity": {
+                            "id": "848921413196984320",
+                            "name": "Computer programming",
+                            "description": "Computer programming"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "66",
+                            "name": "Interests and Hobbies Category",
+                            "description": "A grouping of interests and hobbies entities, like Novelty Food or Destinations"
+                        },
+                        "entity": {
+                            "id": "849075430715936768",
+                            "name": "Open source",
+                            "description": "Open source"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "849075430715936768",
+                            "name": "Open source",
+                            "description": "Open source"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "29",
+                            "name": "Events [Entity Service]",
+                            "description": "Real world events. "
+                        },
+                        "entity": {
+                            "id": "1627885953015586816",
+                            "name": "Huawei MWC 2023",
+                            "description": "You’re invited to #MWC23 Barcelona! Don’t miss the #Huawei #GUIDE to the intelligent world. You’ll want to leverage the innovative powers of ICT technologies like 5G, cloud, and AI. Register now: https://tinyurl.com/25nf3bxs."
+                        }
+                    }
+                ],
+                "lang": "en",
+                "edit_history_tweet_ids": [
+                    "1628162063859126273"
+                ],
+                "created_at": "2023-02-21T22:37:40.000Z"
+            }
+        ]
+    }
+}

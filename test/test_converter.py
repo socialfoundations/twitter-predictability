@@ -63,6 +63,7 @@ user_exceptions = {
 tweet_exceptions = {
     "id": "*",  # V1 stored a 53-bit int representation of the 64-bit id, which can cause a mismatch between v2_id and v1_id
     "truncated": "*",
+    "entities": {"user_mentions": {"_list": {"name": "*", "id": "*"}}},
     "source": "*",
     "in_reply_to_status_id": "*",
     "in_reply_to_status_id_str": "*",
@@ -139,6 +140,15 @@ class TestTweetConverters(unittest.TestCase):
     def test_V2_to_V1_tweet_example_1(self):
         expected, actual = self._get_expected_actual(
             "V2_tweet_1.json", "V1_tweet_1.json"
+        )
+        diff = Compare(config=self.compare_config, rules=tweet_exceptions).check(
+            expected, actual
+        )
+        self.assertEqual(diff, NO_DIFF)
+
+    def test_V2_to_V1_tweet_example_2(self):
+        expected, actual = self._get_expected_actual(
+            "V2_tweet_2.json", "V1_tweet_2.json"
         )
         diff = Compare(config=self.compare_config, rules=tweet_exceptions).check(
             expected, actual

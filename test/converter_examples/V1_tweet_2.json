@@ -1,0 +1,122 @@
+{
+    "created_at": "Tue Feb 21 22:53:51 +0000 2023",
+    "id": 1628166135760961500,
+    "id_str": "1628166135760961538",
+    "text": "@AlphaSignalAI @huggingface Smart move by AWS. They don’t have an OpenAI type relationship (though some of their ML, esp for inventory / warehousing is world class). \n\nWhen you can’t play with depth, play with width.",
+    "truncated": false,
+    "entities": {
+        "hashtags": [],
+        "symbols": [],
+        "user_mentions": [
+            {
+                "screen_name": "AlphaSignalAI",
+                "name": "Lior⚡",
+                "id": 931470139,
+                "id_str": "931470139",
+                "indices": [
+                    0,
+                    14
+                ]
+            },
+            {
+                "screen_name": "huggingface",
+                "name": "Hugging Face",
+                "id": 778764142412984300,
+                "id_str": "778764142412984320",
+                "indices": [
+                    15,
+                    27
+                ]
+            }
+        ],
+        "urls": []
+    },
+    "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+    "in_reply_to_status_id": 1628162063859126300,
+    "in_reply_to_status_id_str": "1628162063859126273",
+    "in_reply_to_user_id": 931470139,
+    "in_reply_to_user_id_str": "931470139",
+    "in_reply_to_screen_name": "AlphaSignalAI",
+    "user": {
+        "id": 27213047,
+        "id_str": "27213047",
+        "name": "Krishna",
+        "screen_name": "ntkris",
+        "location": "Writing:",
+        "description": "Building https://t.co/9TFqiReBsH: Your copilot for customer success. Talks about SaaS, product and AI.",
+        "url": "https://t.co/tHO57rKFoe",
+        "entities": {
+            "url": {
+                "urls": [
+                    {
+                        "url": "https://t.co/tHO57rKFoe",
+                        "expanded_url": "https://ntkris.substack.com",
+                        "display_url": "ntkris.substack.com",
+                        "indices": [
+                            0,
+                            23
+                        ]
+                    }
+                ]
+            },
+            "description": {
+                "urls": [
+                    {
+                        "url": "https://t.co/9TFqiReBsH",
+                        "expanded_url": "http://kili.so",
+                        "display_url": "kili.so",
+                        "indices": [
+                            9,
+                            32
+                        ]
+                    }
+                ]
+            }
+        },
+        "protected": false,
+        "followers_count": 2927,
+        "friends_count": 873,
+        "listed_count": 81,
+        "created_at": "Sat Mar 28 11:21:00 +0000 2009",
+        "favourites_count": 7426,
+        "utc_offset": null,
+        "time_zone": null,
+        "geo_enabled": true,
+        "verified": false,
+        "statuses_count": 9853,
+        "lang": null,
+        "contributors_enabled": false,
+        "is_translator": false,
+        "is_translation_enabled": false,
+        "profile_background_color": "0A979E",
+        "profile_background_image_url": "http://abs.twimg.com/images/themes/theme1/bg.png",
+        "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme1/bg.png",
+        "profile_background_tile": true,
+        "profile_image_url": "http://pbs.twimg.com/profile_images/1522874874980671489/cCqH9E4g_normal.jpg",
+        "profile_image_url_https": "https://pbs.twimg.com/profile_images/1522874874980671489/cCqH9E4g_normal.jpg",
+        "profile_banner_url": "https://pbs.twimg.com/profile_banners/27213047/1662448833",
+        "profile_link_color": "021217",
+        "profile_sidebar_border_color": "BDDCAD",
+        "profile_sidebar_fill_color": "DDFFCC",
+        "profile_text_color": "333333",
+        "profile_use_background_image": true,
+        "has_extended_profile": false,
+        "default_profile": false,
+        "default_profile_image": false,
+        "following": false,
+        "follow_request_sent": false,
+        "notifications": false,
+        "translator_type": "none",
+        "withheld_in_countries": []
+    },
+    "geo": null,
+    "coordinates": null,
+    "place": null,
+    "contributors": null,
+    "is_quote_status": false,
+    "retweet_count": 0,
+    "favorite_count": 15,
+    "favorited": false,
+    "retweeted": false,
+    "lang": "en"
+}
