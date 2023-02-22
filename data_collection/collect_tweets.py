@@ -7,6 +7,7 @@ import os, logging, time
 from datetime import datetime
 from tqdm import tqdm
 import uuid
+import collect_utils
 from collect_utils import log_to_file, get_email_logger
 
 # load environment variables (like the Twitter API bearer token) from .env file
@@ -100,70 +101,12 @@ def stream_loop(streaming_client, count, max_count, restart, tweets_collection):
 
     streaming_client.filter(
         threaded=True,
-        expansions=[
-            "geo.place_id",
-            "author_id",
-            "attachments.media_keys",
-            "attachments.poll_ids",
-        ],
-        tweet_fields=[
-            "attachments",
-            "author_id",
-            "context_annotations",
-            "conversation_id",
-            "created_at",
-            "edit_controls",
-            "edit_history_tweet_ids",
-            "entities",
-            "geo",
-            "in_reply_to_user_id",
-            "lang",
-            "non_public_metrics",
-            "organic_metrics",
-            "possibly_sensitive",
-            "promoted_metrics",
-            "public_metrics",
-            "referenced_tweets",
-            "reply_settings",
-            "source",
-            "withheld",
-        ],
-        user_fields=[
-            "created_at",
-            "description",
-            "entities",
-            "location",
-            "pinned_tweet_id",
-            "profile_image_url",
-            "protected",
-            "public_metrics",
-            "url",
-            "verified",
-            "verified_type",
-            "withheld",
-        ],
-        place_fields=[
-            "contained_within",
-            "country",
-            "country_code",
-            "geo",
-            "name",
-            "place_type",
-        ],
-        media_fields=[
-            "alt_text",
-            "duration_ms",
-            "height",
-            "non_public_metrics",
-            "organic_metrics",
-            "preview_image_url",
-            "promoted_metrics",
-            "public_metrics",
-            "url",
-            "variants",
-            "width",
-        ],
-        poll_fields=["duration_minutes", "end_datetime", "voting_status"],
+        expansions=collect_utils.ALL_EXPANSIONS,
+        tweet_fields=collect_utils.ALL_TWEET_FIELDS,
+        user_fields=collect_utils.ALL_USER_FIELDS,
+        place_fields=collect_utils.ALL_PLACE_FIELDS,
+        media_fields=collect_utils.ALL_MEDIA_FIELDS,
+        poll_fields=collect_utils.ALL_POLL_FIELDS,
         backfill_minutes=backfill_minutes,
     )
 
