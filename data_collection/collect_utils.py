@@ -72,6 +72,18 @@ ALL_MEDIA_FIELDS = [
 ALL_POLL_FIELDS = ["duration_minutes", "end_datetime", "voting_status"]
 
 
+def log_to_stdout(logger_name, level=None):
+    logger = logging.getLogger(logger_name)
+    if level is not None:
+        logger.setLevel(level)
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+        "[%(levelname)s] %(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S"
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+
 def log_to_file(logger_name, logfile, level=None):
     logger = logging.getLogger(logger_name)
     if level is not None:
