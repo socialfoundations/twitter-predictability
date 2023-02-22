@@ -49,9 +49,6 @@ def bend_user(user):
     return bend(mapping=V2_TO_V1_USER, source=user)
 
 
-# Filled fields with default value:
-#   - entities.user_mentions.id
-#   - entities.user_mentions.id_str
 V2_TO_V1_TWEET = {
     "created_at": S("data", "created_at") >> F(v2_to_v1_date),
     "id": S("data", "id") >> F(int),
@@ -61,9 +58,9 @@ V2_TO_V1_TWEET = {
         "user_mentions": OptionalS("data", "entities", "mentions", default=[])
         >> ForallBend(
             {
-                "screen_name": S("tag"),
-                "id": K("0") >> F(int),
-                "id_str": K("0"),
+                "screen_name": S("username"),
+                "id": S("id") >> F(int),
+                "id_str": S("id"),
                 "indices": [S("start"), S("end")],
             }
         ),
