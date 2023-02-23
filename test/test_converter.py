@@ -28,7 +28,7 @@ compare_config = {
 # ignore these keys when comparing
 user_exceptions = {
     "id": "*",  # V1 stored a 53-bit int representation of the 64-bit id, which can cause a mismatch between v2_id and v1_id
-    "favourites_count": "*",
+    "favourites_count": "*",  # because of default value
     "profile_location": "*",
     "entities": {"description": "*"},
     "utc_offset": "*",
@@ -51,8 +51,7 @@ user_exceptions = {
     "profile_text_color": "*",
     "profile_use_background_image": "*",
     "has_extended_profile": "*",
-    "default_profile": "*",
-    "default_profile_image": "*",
+    "default_profile": "*",  # because of default value
     "following": "*",
     "follow_request_sent": "*",
     "notifications": "*",

@@ -1,7 +1,13 @@
 # Converts V2 Twitter API object models to V1.1
 from jsonbender import K, S, F, OptionalS, bend
 from jsonbender.list_ops import ForallBend
+from jsonbender.control_flow import If
 from datetime import datetime
+
+
+default_profile_image_url = (
+    "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png"
+)
 
 
 def v2_to_v1_date(datestr):
@@ -10,7 +16,11 @@ def v2_to_v1_date(datestr):
 
 
 # Filled fields with default value:
-#   - favourites_count
+#   - favourites_count: 0
+#   - default_profile: True
+#       Context:
+#           * Bot-O-Meter friends feature: fraction of users with default profile AND default picture
+#           * No information on background / theme in V2 API
 V2_TO_V1_USER = {
     "id": S("data", "id") >> F(int),
     "id_str": S("data", "id"),
@@ -39,6 +49,12 @@ V2_TO_V1_USER = {
     "favourites_count": K("0") >> F(int),
     "statuses_count": S("data", "public_metrics", "tweet_count"),
     "created_at": S("data", "created_at") >> F(v2_to_v1_date),
+    "default_profile": K(True),
+    "default_profile_image": If(
+        S("data", "profile_image_url") == K(default_profile_image_url),
+        K(True),
+        K(False),
+    ),
     "verified": S("data", "verified"),
     "profile_image_url_https": S("data", "profile_image_url"),
 }
