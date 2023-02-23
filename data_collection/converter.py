@@ -17,6 +17,7 @@ def v2_to_v1_date(datestr):
 
 # Filled fields with default value:
 #   - favourites_count: 0
+#   - lang: null (deprecated V1 field)
 #   - default_profile: True
 #       Context:
 #           * Bot-O-Meter friends feature: fraction of users with default profile AND default picture
@@ -45,6 +46,7 @@ V2_TO_V1_USER = {
     "protected": S("data", "protected"),
     "followers_count": S("data", "public_metrics", "followers_count"),
     "friends_count": S("data", "public_metrics", "following_count"),
+    "lang": K(None),
     "listed_count": S("data", "public_metrics", "listed_count"),
     "favourites_count": K("0") >> F(int),
     "statuses_count": S("data", "public_metrics", "tweet_count"),

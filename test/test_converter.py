@@ -34,7 +34,6 @@ user_exceptions = {
     "utc_offset": "*",
     "time_zone": "*",
     "geo_enabled": "*",
-    "lang": "*",
     "status": "*",
     "contributors_enabled": "*",
     "is_translator": "*",
