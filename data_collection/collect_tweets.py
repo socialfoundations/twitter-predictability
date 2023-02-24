@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import tweepy
 import tweepy.errors
 from pymongo import MongoClient, ASCENDING
@@ -8,13 +7,7 @@ from datetime import datetime
 from tqdm import tqdm
 import uuid
 import collect_utils
-from collect_utils import log_to_file, get_email_logger
-
-# load environment variables (like the Twitter API bearer token) from .env file
-load_dotenv()
-
-# main logger
-main_logger = logging.getLogger("main")
+from collect_utils import main_logger, log_to_file, get_email_logger
 
 # maximum number of tweets to pull
 MAX_TWEETS = 1e7
