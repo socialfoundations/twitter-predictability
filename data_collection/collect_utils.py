@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import logging, os, sys
 from ssl_smtp_handler import SSLSMTPHandler
 import requests
+import wandb
 
 # load environment variables (like the Twitter API bearer token) from .env file
 load_dotenv()
@@ -165,3 +166,15 @@ def botometer_request(timeline, mentions, user):
         return response
     else:
         response.raise_for_status()
+
+
+def init_wandb_run(config, job_type, mode="online"):
+    run = wandb.init(
+        project=os.environ["WANDB_PROJECT"],
+        entity="social-foundations",
+        save_code=True,
+        job_type=job_type,
+        config=config,
+        mode=mode,
+    )
+    run.log_code()  # save code
