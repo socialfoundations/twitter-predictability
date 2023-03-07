@@ -9,16 +9,16 @@ import json
 # load environment variables (like the Twitter API bearer token) from .env file
 load_dotenv()
 
+DATASET_NAME = "tweets-raw"
 FILE_PATH = "tweets.json"
 
 filter_options = {
     "filter": {"possibly_sensitive": False},
-    "max_documents": 1000000,
     "fields": ["id", "author_id", "text"],
 }
 
 
-def filter_collection(collection, max_documents, fields, filter):
+def filter_collection(collection, max_documents=0, fields=None, filter=None):
     cursor = collection.find(filter, limit=max_documents, projection=fields)
     return cursor
 
@@ -35,17 +35,27 @@ if __name__ == "__main__":
         save_code=True,
         job_type="preprocess-data",
     ) as run:
+        run.log_code()
+
+        documents = list(filter_collection(tweets_collection, **filter_options))
+        num_docs = len(documents)
+        print("Number of documents: %d" % (num_docs))
+
+        metadata = filter_options
+        metadata["num_tweets"] = num_docs
+
         raw_data = wandb.Artifact(
-            "tweets-raw-1M",
+            DATASET_NAME,
             type="dataset",
             description="Tweets that we will use for fine-tuning our LLM.",
-            metadata=filter_options,
+            metadata=metadata,
         )
-        cursor = filter_collection(tweets_collection, **filter_options)
 
         with raw_data.new_file(FILE_PATH, "w+") as file:
-            documents = list(cursor)
-            json_data = dumps(documents)
-            json.dump(json_data, file)
+            json_data_list = json.loads(dumps(documents))
+            # save data in JSON Line format
+            for data in json_data_list:
+                json.dump(data, file)
+                file.write("\n")
 
         run.log_artifact(raw_data)
