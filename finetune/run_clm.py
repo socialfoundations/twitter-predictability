@@ -21,6 +21,10 @@ https://huggingface.co/models?filter=text-generation
 """
 # You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
 
+from dotenv import load_dotenv
+# load environment variables 
+load_dotenv() 
+
 import logging
 import math
 import os
@@ -53,9 +57,11 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
+import wandb
+wandb.init(project=os.environ["WANDB_PROJECT"], entity=os.environ["WANDB_ENTITY"])
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
-check_min_version("4.27.0.dev0")
+#check_min_version("4.27.0.dev0")
 
 require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/language-modeling/requirements.txt")
 
@@ -150,6 +156,7 @@ class DataTrainingArguments:
     dataset_config_name: Optional[str] = field(
         default=None, metadata={"help": "The configuration name of the dataset to use (via the datasets library)."}
     )
+    artifact_name: Optional[str] = field(default=None, metadata={"help": "Name of the wandb dataset artifact."})
     train_file: Optional[str] = field(default=None, metadata={"help": "The input training data file (a text file)."})
     validation_file: Optional[str] = field(
         default=None,
@@ -205,8 +212,8 @@ class DataTrainingArguments:
         if self.streaming:
             require_version("datasets>=2.0.0", "The streaming feature requires `datasets>=2.0.0`")
 
-        if self.dataset_name is None and self.train_file is None and self.validation_file is None:
-            raise ValueError("Need either a dataset name or a training/validation file.")
+        if self.dataset_name is None and self.train_file is None and self.validation_file is None and self.artifact_name is None:
+            raise ValueError("Need either a wandb artifact, a dataset name or a training/validation file.")
         else:
             if self.train_file is not None:
                 extension = self.train_file.split(".")[-1]
@@ -315,6 +322,13 @@ def main():
         data_files = {}
         dataset_args = {}
         if data_args.train_file is not None:
+            data_files["train"] = data_args.train_file
+        elif data_args.artifact_name is not None and wandb.run is not None:
+            run = wandb.run
+            artifact = run.use_artifact(data_args.artifact_name, type="dataset")
+            artifact_dir = artifact.download()
+            file_name = os.listdir(artifact_dir)[0] # get first file from artifact directory
+            data_args.train_file = os.path.join(artifact_dir, file_name)
             data_files["train"] = data_args.train_file
         if data_args.validation_file is not None:
             data_files["validation"] = data_args.validation_file
