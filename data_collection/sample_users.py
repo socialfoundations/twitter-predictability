@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 # load environment variables (like the Twitter API bearer token) from .env file
 load_dotenv()
 
-main_logger = logging.getLogger(__name__)
+main_logger = logging.getLogger("main")
 
 config = {
     "min_tweets": 200,
@@ -151,9 +151,9 @@ if __name__ == "__main__":
     cfg = wandb.config
 
     # logging
-    utils.logging.log_to_stdout("main", level=logging.DEBUG)
-    utils.logging.log_to_stdout("utils", level=logging.DEBUG)
-    utils.logging.log_to_stdout("tweepy", level=logging.DEBUG)
+    utils.logging.log_to_stdout("main", level=logging.INFO)
+    utils.logging.log_to_stdout("utils", level=logging.INFO)
+    utils.logging.log_to_stdout("tweepy", level=logging.INFO)
 
     # setup MongoDB
     mongo_conn = MongoClient(os.environ["MONGO_CONN"])
