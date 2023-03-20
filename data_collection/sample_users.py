@@ -1,5 +1,4 @@
-import os, logging, time
-from datetime import datetime
+import os, logging
 import utils.logging
 import utils.tweepy
 import utils.wandb
@@ -7,10 +6,8 @@ import utils.botometer
 import utils.mongo
 from pymongo import MongoClient, ASCENDING
 import tweepy
-from tweepy.errors import TooManyRequests, TwitterServerError, HTTPException
 from utils.converter import V2_TO_V1_TWEET, bend_user
 from jsonbender import bend
-from math import ceil
 import wandb
 
 from dotenv import load_dotenv
@@ -27,140 +24,6 @@ config = {
     "num_mention_tweets": 100,
     "end_time": "2023-01-19T11:59:59Z",
 }
-
-
-def request_error_handler(request_fn):
-    """
-    Handles exceptions commonly thrown by tweepy.Client requests. Can be used as a decorator on a function that calls the twitter API.
-
-
-    Args:
-        request_fn: The function that throws these exceptions.
-    """
-
-    def inner_fn(*args, **kwargs):
-        try:
-            return request_fn(*args, **kwargs)
-        except TooManyRequests as e:
-            res = e.response
-            main_logger.error(
-                "(%s) HTTP-%d: %s. Too many requests."
-                % (request_fn.__name__, res.status_code, res.reason)
-            )
-            main_logger.debug("Header: %s\nContent: %s" % (res.headers, res.content))
-            main_logger.info("Sleeping for 15 minutes.")
-            time.sleep(60 * 15)
-        except TwitterServerError as e:
-            res = e.response
-            main_logger.error(
-                "(%s) HTTP-%d: %s. Twitter server error."
-                % (request_fn.__name__, res.status_code, res.reason)
-            )
-            main_logger.debug("Header: %s\nContent: %s" % (res.headers, res.content))
-        except HTTPException as e:
-            res = e.response
-            main_logger.error(
-                "(%s) HTTP-%d: %s" % (request_fn.__name__, res.status_code, res.reason)
-            )
-            main_logger.debug("Header: %s\nContent: %s" % (res.headers, res.content))
-
-    return inner_fn
-
-
-@request_error_handler
-def access_user_data(client, user_id):
-    """
-    Queries user data, and returns it.
-    Errors can occur if the user profile has been set to private, has been suspended or deleted, etc.
-
-    Args:
-        api (tweepy.Client): Client for Twitter API.
-        user_id (int | str): ID of user we want to query.
-
-    Returns:
-        dict: User object, None if user could not be retrieved.
-    """
-    response = client.get_user(id=user_id, user_fields=utils.tweepy.ALL_USER_FIELDS)
-    user_obj = response.data
-    if user_obj is not None:
-        return user_obj.data
-    return None
-
-
-@request_error_handler
-def get_user_tweets(client, user_id, limit, method="timeline", author=None, **kwargs):
-    """
-    Returns tweets from the specified user's timeline.
-
-    Args:
-        api (tweepy.Client): Client for Twitter API.
-        user_id (int | str): ID of user we want to query.
-        limit (int): Max number of tweets we want to pull.
-        method (string): "timeline" or "mentions". Specifies what tweets to pull. Default is "timeline".
-        author (dict | None): Author object of pulled tweets. Default is None.
-        kwargs: Keyword arguments passed to tweepy.Paginator
-
-    Returns:
-        list: List of user's tweets (aka. their timeline).
-        string: The next token for querying the timeline.
-
-        A tweet is a dictionary with two keys - "data" and "includes" with the following structure:
-                "data": Data related to tweet: id, created_at, author_id, text, etc...
-                "includes":
-                    "users": List of user objects related to tweet. First one is author of tweet.
-    """
-    timeline = []
-
-    assert method in ["timeline", "mentions"]
-    if method == "timeline":
-        method_fn = client.get_users_tweets
-    elif method == "mentions":
-        method_fn = client.get_users_mentions
-
-    if author is None:
-        expansions = "author_id"
-    else:
-        expansions = None
-
-    max_results = min(
-        100, max(5, limit)
-    )  # max results per page - 100 is the maximum, 5 is the minimum
-    paginator = tweepy.Paginator(
-        method=method_fn,
-        id=user_id,
-        expansions=expansions,
-        tweet_fields=utils.tweepy.TWEET_PUBLIC_FIELDS,
-        user_fields=utils.tweepy.ALL_USER_FIELDS,
-        max_results=max_results,
-        limit=ceil(limit / max_results),  # how many calls to make to the api
-        **kwargs,
-    )
-
-    def author_from_includes(id, includes):
-        return next(
-            author.data for author in includes["users"] if author.data["id"] == id
-        )
-
-    for page in paginator:
-        no_results = page.meta["result_count"] == 0
-        next_token = None if not "next_token" in page.meta else page.meta["next_token"]
-        if no_results:
-            return timeline[:limit], next_token
-        for tweet_obj in page.data:
-            queried_at = datetime.utcnow().isoformat()
-            tweet_obj.data["queried_at"] = queried_at
-            if author is None:
-                author = author_from_includes(
-                    id=tweet_obj.data["author_id"], includes=page.includes
-                )
-            tweet = {
-                "data": tweet_obj.data,
-                "includes": {
-                    "users": [author],
-                },
-            }
-            timeline.append(tweet)
-    return timeline[:limit], next_token
 
 
 def count_retweets(timeline):
@@ -335,7 +198,9 @@ if __name__ == "__main__":
             sampled_user = SampledUser(user)
             # check if we can access user data
             # --> error_on_access
-            v2_user = access_user_data(client=client, user_id=sampled_user.id)
+            v2_user = utils.tweepy.access_user_data(
+                client=client, user_id=sampled_user.id
+            )
             sampled_user.error_or_no_access = v2_user is None or v2_user["protected"]
             if sampled_user.error_or_no_access:
                 main_logger.info(
@@ -345,7 +210,7 @@ if __name__ == "__main__":
             else:
                 # collect 200 tweets
                 # --> RT_ratio
-                v2_user_timeline, next_token = get_user_tweets(
+                v2_user_timeline, next_token = utils.tweepy.get_user_tweets(
                     client=client,
                     user_id=sampled_user.id,
                     limit=cfg["num_timeline_tweets"],
@@ -366,7 +231,7 @@ if __name__ == "__main__":
                 sampled_user.RT_num = count_retweets(timeline=v2_user_timeline)
 
                 # collect 100 mentions
-                v2_user_mentions, _ = get_user_tweets(
+                v2_user_mentions, _ = utils.tweepy.get_user_tweets(
                     client=client,
                     user_id=sampled_user.id,
                     limit=cfg["num_mention_tweets"],
