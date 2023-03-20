@@ -7,7 +7,7 @@ from pymongo.errors import BulkWriteError, DuplicateKeyError, WriteError
 import pymongo.collection
 import tweepy
 from tweepy.errors import TooManyRequests, TwitterServerError, HTTPException
-from converter import V2_TO_V1_TWEET, bend_user
+from utils.converter import V2_TO_V1_TWEET, bend_user
 from jsonbender import bend
 from math import ceil
 import wandb

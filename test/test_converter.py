@@ -1,6 +1,6 @@
 import unittest
 import os
-from data_collection.converter import V2_TO_V1_TWEET, V2_TO_V1_USER
+from data_collection.utils.converter import V2_TO_V1_TWEET, V2_TO_V1_USER
 from jsonbender import bend
 import json
 from jsoncomparison import Compare, NO_DIFF
