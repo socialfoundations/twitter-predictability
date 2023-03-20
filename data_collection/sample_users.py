@@ -1,7 +1,7 @@
 import os, logging, time
 from datetime import datetime
 import collect_utils
-from collect_utils import main_logger
+import utils.logging
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import BulkWriteError, DuplicateKeyError, WriteError
 import pymongo.collection
@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 
 # load environment variables (like the Twitter API bearer token) from .env file
 load_dotenv()
+
+main_logger = logging.getLogger(__name__)
 
 config = {
     "min_tweets": 200,
@@ -344,8 +346,9 @@ if __name__ == "__main__":
     cfg = wandb.config
 
     # logging
-    collect_utils.log_to_stdout("main", level=logging.DEBUG)
-    collect_utils.log_to_stdout("tweepy", level=logging.DEBUG)
+    utils.logging.log_to_stdout("main", level=logging.DEBUG)
+    utils.logging.log_to_stdout("utils", level=logging.DEBUG)
+    utils.logging.log_to_stdout("tweepy", level=logging.DEBUG)
 
     # setup MongoDB
     mongo_conn = MongoClient(os.environ["MONGO_CONN"])
