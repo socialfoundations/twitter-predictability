@@ -1,7 +1,9 @@
 import os, logging, time
 from datetime import datetime
-import collect_utils
 import utils.logging
+import utils.tweepy
+import utils.wandb
+import utils.botometer
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import BulkWriteError, DuplicateKeyError, WriteError
 import pymongo.collection
@@ -91,7 +93,7 @@ def access_user_data(client, user_id):
     Returns:
         dict: User object, None if user could not be retrieved.
     """
-    response = client.get_user(id=user_id, user_fields=collect_utils.ALL_USER_FIELDS)
+    response = client.get_user(id=user_id, user_fields=utils.tweepy.ALL_USER_FIELDS)
     user_obj = response.data
     if user_obj is not None:
         return user_obj.data
@@ -140,8 +142,8 @@ def get_user_tweets(client, user_id, limit, method="timeline", author=None, **kw
         method=method_fn,
         id=user_id,
         expansions=expansions,
-        tweet_fields=collect_utils.TWEET_PUBLIC_FIELDS,
-        user_fields=collect_utils.ALL_USER_FIELDS,
+        tweet_fields=utils.tweepy.TWEET_PUBLIC_FIELDS,
+        user_fields=utils.tweepy.ALL_USER_FIELDS,
         max_results=max_results,
         limit=ceil(limit / max_results),  # how many calls to make to the api
         **kwargs,
@@ -342,7 +344,7 @@ class SampledUser:
 
 if __name__ == "__main__":
     # wandb
-    collect_utils.init_wandb_run(job_type="sample-users", config=config)
+    utils.wandb.init_wandb_run(job_type="sample-users", config=config)
     cfg = wandb.config
 
     # logging
@@ -444,7 +446,7 @@ if __name__ == "__main__":
                 # Bot-O-Meter request
                 # --> majority_lang
                 # --> bot_score
-                response = collect_utils.botometer_request(
+                response = utils.botometer.botometer_request(
                     timeline=v1_user_timeline, mentions=v1_user_mentions, user=v1_user
                 )
                 body = response.json()
