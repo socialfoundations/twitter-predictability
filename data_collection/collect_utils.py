@@ -1,3 +1,11 @@
+import warnings
+
+warnings.warn(
+    "Please use the utils module from now on!",
+    category=DeprecationWarning,
+    stacklevel=2,
+)
+
 import logging, os, sys
 from ssl_smtp_handler import SSLSMTPHandler
 import requests
