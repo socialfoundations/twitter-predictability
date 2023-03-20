@@ -9,6 +9,11 @@ import uuid
 import collect_utils
 from collect_utils import main_logger, log_to_file, get_email_logger
 
+from dotenv import load_dotenv
+
+# load environment variables (like the Twitter API bearer token) from .env file
+load_dotenv()
+
 # maximum number of tweets to pull
 MAX_TWEETS = 1e7
 

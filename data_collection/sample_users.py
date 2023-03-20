@@ -12,6 +12,11 @@ from jsonbender import bend
 from math import ceil
 import wandb
 
+from dotenv import load_dotenv
+
+# load environment variables (like the Twitter API bearer token) from .env file
+load_dotenv()
+
 config = {
     "min_tweets": 200,
     "num_users": 1500,

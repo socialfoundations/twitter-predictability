@@ -1,11 +1,7 @@
-from dotenv import load_dotenv
 import logging, os, sys
 from ssl_smtp_handler import SSLSMTPHandler
 import requests
 import wandb
-
-# load environment variables (like the Twitter API bearer token) from .env file
-load_dotenv()
 
 # main logger
 main_logger = logging.getLogger("main")
