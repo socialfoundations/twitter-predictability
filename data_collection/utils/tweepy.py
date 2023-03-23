@@ -144,14 +144,14 @@ def access_user_data(client, user_id):
 
 
 @request_error_handler
-def get_user_tweets(client, user_id, limit, method="timeline", author=None, **kwargs):
+def get_user_tweets(client, user_id, minimum, method="timeline", author=None, **kwargs):
     """
     Returns tweets from the specified user's timeline.
 
     Args:
         api (tweepy.Client): Client for Twitter API.
         user_id (int | str): ID of user we want to query.
-        limit (int): Max number of tweets we want to pull.
+        minimum (int): Number of tweets we want to pull (returned number of tweets might be higher).
         method (string): "timeline" or "mentions". Specifies what tweets to pull. Default is "timeline".
         author (dict | None): Author object of pulled tweets. Default is None.
         kwargs: Keyword arguments passed to tweepy.Paginator
@@ -179,7 +179,7 @@ def get_user_tweets(client, user_id, limit, method="timeline", author=None, **kw
         expansions = None
 
     max_results = min(
-        100, max(5, limit)
+        100, max(5, minimum)
     )  # max results per page - 100 is the maximum, 5 is the minimum
     paginator = tweepy.Paginator(
         method=method_fn,
@@ -188,7 +188,7 @@ def get_user_tweets(client, user_id, limit, method="timeline", author=None, **kw
         tweet_fields=TWEET_PUBLIC_FIELDS,
         user_fields=ALL_USER_FIELDS,
         max_results=max_results,
-        limit=ceil(limit / max_results),  # how many calls to make to the api
+        limit=ceil(minimum / max_results),  # how many calls to make to the api
         **kwargs,
     )
 
@@ -201,7 +201,7 @@ def get_user_tweets(client, user_id, limit, method="timeline", author=None, **kw
         no_results = page.meta["result_count"] == 0
         next_token = None if not "next_token" in page.meta else page.meta["next_token"]
         if no_results:
-            return timeline[:limit], next_token
+            return timeline, next_token
         for tweet_obj in page.data:
             queried_at = datetime.utcnow().isoformat()
             tweet_obj.data["queried_at"] = queried_at
@@ -216,4 +216,4 @@ def get_user_tweets(client, user_id, limit, method="timeline", author=None, **kw
                 },
             }
             timeline.append(tweet)
-    return timeline[:limit], next_token
+    return timeline, next_token

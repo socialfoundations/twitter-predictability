@@ -213,11 +213,12 @@ if __name__ == "__main__":
                 v2_user_timeline, next_token = utils.tweepy.get_user_tweets(
                     client=client,
                     user_id=sampled_user.id,
-                    limit=cfg["num_timeline_tweets"],
+                    minimum=cfg["num_timeline_tweets"],
                     method="timeline",
                     author=v2_user,
                     end_time=cfg["end_time"],
                 )
+                v2_user_timeline = v2_user_timeline[: cfg["num_timeline_tweets"]]
                 sampled_user.tweet_num = len(v2_user_timeline)
                 sampled_user.next_token = next_token
                 if sampled_user.tweet_num == 0:
@@ -234,10 +235,11 @@ if __name__ == "__main__":
                 v2_user_mentions, _ = utils.tweepy.get_user_tweets(
                     client=client,
                     user_id=sampled_user.id,
-                    limit=cfg["num_mention_tweets"],
+                    minimum=cfg["num_mention_tweets"],
                     method="mentions",
                     end_time=cfg["end_time"],
                 )
+                v2_user_mentions = v2_user_mentions[: cfg["num_mention_tweets"]]
                 sampled_user.mention_num = len(v2_user_mentions)
 
                 # convert tweets and user to v1 object model
