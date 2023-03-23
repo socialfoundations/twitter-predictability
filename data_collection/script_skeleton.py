@@ -24,7 +24,9 @@ config = {
 
 if __name__ == "__main__":
     # wandb - "offline" mode to avoid sending wandb runs which are constantly failing
-    utils.wandb.init_wandb_run(job_type="test-job", config=config, mode="offline")
+    utils.wandb.init_wandb_run(
+        job_type="test-job", config=config, mode="offline", log_code=False
+    )
     cfg = wandb.config
 
     # logging - DEBUG is encouraged while writing the script, later this can be changed to INFO and writing logs to file

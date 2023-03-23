@@ -2,7 +2,7 @@ import wandb
 import os
 
 
-def init_wandb_run(config, job_type, mode="online"):
+def init_wandb_run(config, job_type, mode="online", log_code=True):
     run = wandb.init(
         project=os.environ["WANDB_PROJECT"],
         entity="social-foundations",
@@ -11,4 +11,5 @@ def init_wandb_run(config, job_type, mode="online"):
         config=config,
         mode=mode,
     )
-    run.log_code()  # save code
+    if log_code:
+        run.log_code()  # save code
