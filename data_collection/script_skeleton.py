@@ -42,3 +42,6 @@ if __name__ == "__main__":
     # setup tweepy client
     main_logger.info("Connecting to Twitter API...")
     client = tweepy.Client(bearer_token=os.environ["BEARER_TOKEN"])
+
+    # cleanup
+    mongo_conn.close()
