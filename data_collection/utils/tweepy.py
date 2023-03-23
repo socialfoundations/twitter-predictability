@@ -188,7 +188,7 @@ def get_user_tweets(client, user_id, minimum, method="timeline", author=None, **
         tweet_fields=TWEET_PUBLIC_FIELDS,
         user_fields=ALL_USER_FIELDS,
         max_results=max_results,
-        limit=ceil(minimum / max_results),  # how many calls to make to the api
+        limit=ceil(minimum / max_results) + 1,  # how many calls to make to the api
         **kwargs,
     )
 
