@@ -1,7 +1,7 @@
 # Converts V2 Twitter API object models to V1.1
 from jsonbender import K, S, F, OptionalS, bend
 from jsonbender.list_ops import ForallBend
-from jsonbender.control_flow import If
+from jsonbender.control_flow import If, Alternation
 from datetime import datetime
 
 
@@ -100,8 +100,8 @@ V2_TO_V1_TWEET = {
         >> ForallBend(
             {
                 "url": S("url"),
-                "expanded_url": S("expanded_url"),
-                "display_url": S("display_url"),
+                "expanded_url": Alternation(S("expanded_url"), S("url")),
+                "display_url": Alternation(S("display_url"), S("url")),
                 "indices": [S("start"), S("end")],
             }
         ),
