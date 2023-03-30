@@ -24,6 +24,7 @@ config = {
     "tweets_per_subject": 200,  # how many tweets to try collect that match specifications
     "exclude": ["retweets"],
     "end_time": "2023-01-19T11:59:59Z",  # don't collect tweets after this timestamp
+    "filter": {"lang": "en"},
 }
 
 
@@ -77,14 +78,16 @@ if __name__ == "__main__":
     for i, subject in enumerate(cursor):
         main_logger.info("Processing %d, user with id %s..." % (i, subject["id"]))
 
-        # Check if we have the user's timeline in our collection already - and if yes how many (non-RT)
-        user_timeline_no_RT = {
+        # Check if we have the user's timeline in our collection already.
+        # If yes how many tweets that satisfy our conditions (not RT, english)
+        user_timeline_no_RT_en = {
             "author_id": subject["id"],
             "referenced_tweets.0.type": {"$ne": "retweeted"},
+            "lang": "en",
         }
-        n_tweets = timelines_collection.count_documents(user_timeline_no_RT)
+        n_tweets = timelines_collection.count_documents(user_timeline_no_RT_en)
         main_logger.debug(
-            "%d non-RT tweets in collection from %s." % (n_tweets, subject["id"])
+            "%d tweets in collection from %s." % (n_tweets, subject["id"])
         )
 
         if n_tweets < cfg["tweets_per_subject"]:
@@ -95,7 +98,7 @@ if __name__ == "__main__":
                 until_id = None
             else:
                 oldest_tweet = timelines_collection.find_one(
-                    user_timeline_no_RT, sort=[("_id", -1)]
+                    user_timeline_no_RT_en, sort=[("_id", -1)]
                 )
                 until_id = oldest_tweet["id"]
 
@@ -107,6 +110,7 @@ if __name__ == "__main__":
                 end_time=cfg["end_time"],
                 exclude=cfg["exclude"],
                 until_id=until_id,
+                filter_conditions=cfg["filter"],
             )
 
             # save it to timelines collection
@@ -119,10 +123,9 @@ if __name__ == "__main__":
             )
 
         # number of non-RT tweets after collection
-        n_tweets = timelines_collection.count_documents(user_timeline_no_RT)
-        main_logger.info(
-            "%d non-RT tweets in collection from %s." % (n_tweets, subject["id"])
-        )
+        n_tweets = timelines_collection.count_documents(user_timeline_no_RT_en)
+        main_logger.info("%d tweets in collection from %s." % (n_tweets, subject["id"]))
+
 
     # cleanup
     mongo_conn.close()
