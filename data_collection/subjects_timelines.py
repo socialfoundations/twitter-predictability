@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import logging, os
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING
 import utils.wandb
 import utils.logging
 import utils.tweepy
@@ -20,8 +20,8 @@ config = {
     "num_subjects": 100,
     "max_rt_ratio": 0.8,
     "max_bot_score": 0.5,
-    "min_tweets": 200,  # in timeline, including retweets!
-    "tweets_per_subject": 200,  # how many tweets to try collect that match specifications
+    "min_tweets": 500,  # in timeline, including retweets!
+    "tweets_per_subject": 500,  # how many tweets to try collect that match specifications
     "exclude": ["retweets"],
     "end_time": "2023-01-19T11:59:59Z",  # don't collect tweets after this timestamp
     "filter": {"lang": "en"},
@@ -49,8 +49,13 @@ if __name__ == "__main__":
     mongo_conn = MongoClient(os.environ["MONGO_CONN"])
     db = mongo_conn[cfg["database"]]  # our database
 
+    users_collection = db["users_collection"]
     sampled_users_collection = db["sampled_users_collection"]
     timelines_collection = db["timelines_collection"]
+
+    # create subjects collection
+    subjects_collection = db["subjects_collection"]
+    subjects_collection.create_index([("id", ASCENDING)], unique=True)
 
     # setup tweepy client
     main_logger.info("Connecting to Twitter API...")
@@ -77,6 +82,11 @@ if __name__ == "__main__":
 
     for i, subject in enumerate(cursor):
         main_logger.info("Processing %d, user with id %s..." % (i, subject["id"]))
+
+        # skip users that have been deleted / set to private, etc.
+        if utils.tweepy.access_user_data(client, user_id=subject["id"]) is None:
+            main_logger.warning("User data could not be accessed. Skipping user.")
+            continue
 
         # Check if we have the user's timeline in our collection already.
         # If yes how many tweets that satisfy our conditions (not RT, english)
@@ -126,6 +136,10 @@ if __name__ == "__main__":
         n_tweets = timelines_collection.count_documents(user_timeline_no_RT_en)
         main_logger.info("%d tweets in collection from %s." % (n_tweets, subject["id"]))
 
+        # save user into subjects collection if enough tweets were collected
+        if n_tweets >= cfg["tweets_per_subject"]:
+            user = users_collection.find_one({"id": subject["id"]})
+            utils.mongo.insert_one(subjects_collection, user)
 
     # cleanup
     mongo_conn.close()
