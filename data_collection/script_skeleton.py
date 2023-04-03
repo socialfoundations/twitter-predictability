@@ -29,10 +29,14 @@ if __name__ == "__main__":
     )
     cfg = wandb.config
 
-    # logging - DEBUG is encouraged while writing the script, later this can be changed to INFO and writing logs to file
-    utils.logging.log_to_stdout("main", level=logging.DEBUG)
-    utils.logging.log_to_stdout("utils", level=logging.DEBUG)
-    utils.logging.log_to_stdout("tweepy", level=logging.DEBUG)
+    # set loggers to lower or same level as handlers
+    utils.logging.set_logger_levels(["main", "utils", "tweepy"], level=logging.DEBUG)
+
+    # logging handlers - INFO to stdout and DEBUG to file
+    utils.logging.logs_to_stdout(["main", "utils", "tweepy"], level=logging.INFO)
+    utils.logging.logs_to_file(
+        ["main", "utils", "tweepy"], logdir=wandb.run.dir, level=logging.DEBUG
+    )
 
     # setup MongoDB
     main_logger.info("Connecting to %s database..." % cfg["database"])
