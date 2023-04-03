@@ -112,6 +112,14 @@ class TestUserConverters(unittest.TestCase):
         )
         self.assertEqual(diff, NO_DIFF)
 
+    def test_V2_to_V1_user_example_2(self):
+        "Example with 'entities.url.urls.expanded_url' missing"
+        expected, actual = self._get_expected_actual("V2_user_2.json", "V1_user_2.json")
+        diff = Compare(config=self.compare_config, rules=user_exceptions).check(
+            expected, actual
+        )
+        self.assertEqual(diff, NO_DIFF)
+
 
 class TestTweetConverters(unittest.TestCase):
     def setUp(self):

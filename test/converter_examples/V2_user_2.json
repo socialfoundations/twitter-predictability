@@ -1,0 +1,292 @@
+{
+    "data": {
+        "description": "Welcome to https://t.co/qVMMho0PcV, where we bring creators of horror & horror fans together! Our goal is to help #SpreadtheHorror through our promotions!",
+        "created_at": "2011-07-10T19:02:33.000Z",
+        "verified": false,
+        "location": "Miami, Florida",
+        "username": "PromoteHorror",
+        "pinned_tweet_id": "1565439035983675394",
+        "entities": {
+            "url": {
+                "urls": [
+                    {
+                        "start": 0,
+                        "end": 28,
+                        "url": "http://www.promotehorror.com"
+                    }
+                ]
+            },
+            "description": {
+                "urls": [
+                    {
+                        "start": 11,
+                        "end": 34,
+                        "url": "https://t.co/qVMMho0PcV",
+                        "expanded_url": "http://PromoteHorror.com",
+                        "display_url": "PromoteHorror.com"
+                    }
+                ],
+                "hashtags": [
+                    {
+                        "start": 114,
+                        "end": 130,
+                        "tag": "SpreadtheHorror"
+                    }
+                ]
+            }
+        },
+        "name": "PromoteHorror 🎃",
+        "protected": false,
+        "url": "http://www.promotehorror.com",
+        "id": "332966388",
+        "public_metrics": {
+            "followers_count": 95817,
+            "following_count": 47441,
+            "tweet_count": 467861,
+            "listed_count": 1342
+        },
+        "profile_image_url": "https://pbs.twimg.com/profile_images/756917329695473664/kBQZLrxB_normal.jpg"
+    },
+    "includes": {
+        "tweets": [
+            {
+                "reply_settings": "everyone",
+                "public_metrics": {
+                    "retweet_count": 166,
+                    "reply_count": 8,
+                    "like_count": 156,
+                    "quote_count": 3,
+                    "impression_count": 0
+                },
+                "conversation_id": "1565439035983675394",
+                "entities": {
+                    "urls": [
+                        {
+                            "start": 150,
+                            "end": 173,
+                            "url": "https://t.co/FO0J2xXGcX",
+                            "expanded_url": "http://PromoteHorror.com/about",
+                            "display_url": "PromoteHorror.com/about",
+                            "images": [
+                                {
+                                    "url": "https://pbs.twimg.com/news_img/1640955492867375104/31bgo-eh?format=jpg&name=orig",
+                                    "width": 1024,
+                                    "height": 293
+                                },
+                                {
+                                    "url": "https://pbs.twimg.com/news_img/1640955492867375104/31bgo-eh?format=jpg&name=150x150",
+                                    "width": 150,
+                                    "height": 150
+                                }
+                            ],
+                            "status": 200,
+                            "title": "About - PromoteHorror.com",
+                            "description": "  Welcome to PromoteHorror.com and thank you for your interest in our promotions. Our goal is to bring creators of horror and horror fans together. We want to help promote your films, books, blogs, websites, artwork, photography, stores, conventions, events, podcasts, crowdfunding campaigns, and more! Perfect for if you don't have the time yourself to be on social media to support",
+                            "unwound_url": "http://PromoteHorror.com/about"
+                        },
+                        {
+                            "start": 238,
+                            "end": 261,
+                            "url": "https://t.co/yTHAWAkmov",
+                            "expanded_url": "https://twitter.com/PromoteHorror/status/1565439035983675394/video/1",
+                            "display_url": "pic.twitter.com/yTHAWAkmov",
+                            "media_key": "7_1565438989481435137"
+                        }
+                    ],
+                    "hashtags": [
+                        {
+                            "start": 20,
+                            "end": 27,
+                            "tag": "horror"
+                        },
+                        {
+                            "start": 85,
+                            "end": 90,
+                            "tag": "book"
+                        },
+                        {
+                            "start": 92,
+                            "end": 98,
+                            "tag": "movie"
+                        },
+                        {
+                            "start": 100,
+                            "end": 108,
+                            "tag": "podcast"
+                        },
+                        {
+                            "start": 206,
+                            "end": 220,
+                            "tag": "promotehorror"
+                        },
+                        {
+                            "start": 221,
+                            "end": 237,
+                            "tag": "SpreadtheHorror"
+                        }
+                    ]
+                },
+                "context_annotations": [
+                    {
+                        "domain": {
+                            "id": "29",
+                            "name": "Events [Entity Service]",
+                            "description": "Real world events. "
+                        },
+                        "entity": {
+                            "id": "1442901475244449793",
+                            "name": "International Podcasts Day"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "65",
+                            "name": "Interests and Hobbies Vertical",
+                            "description": "Top level interests and hobbies groupings, like Food or Travel"
+                        },
+                        "entity": {
+                            "id": "781974596148793345",
+                            "name": "Business & finance"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "66",
+                            "name": "Interests and Hobbies Category",
+                            "description": "A grouping of interests and hobbies entities, like Novelty Food or Destinations"
+                        },
+                        "entity": {
+                            "id": "847888632711061504",
+                            "name": "Personal finance",
+                            "description": "Personal finance"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "66",
+                            "name": "Interests and Hobbies Category",
+                            "description": "A grouping of interests and hobbies entities, like Novelty Food or Destinations"
+                        },
+                        "entity": {
+                            "id": "1046568685018595328",
+                            "name": "Crowdfunding",
+                            "description": "Crowdfunding"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "67",
+                            "name": "Interests and Hobbies",
+                            "description": "Interests, opinions, and behaviors of individuals, groups, or cultures; like Speciality Cooking or Theme Parks"
+                        },
+                        "entity": {
+                            "id": "847894353708068864",
+                            "name": "Investing",
+                            "description": "Investing"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "69",
+                            "name": "News Vertical",
+                            "description": "News Categories like Entertainment or Technology"
+                        },
+                        "entity": {
+                            "id": "1003935819944505346",
+                            "name": "Arts and culture news",
+                            "description": "Arts & Culture News"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "91",
+                            "name": "Podcast",
+                            "description": "A podcast like \"Serial\""
+                        },
+                        "entity": {
+                            "id": "1490751295698837510",
+                            "name": "Podcasts"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "781974596148793345",
+                            "name": "Business & finance"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "839544274442051584",
+                            "name": "Entertainment"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "1046568685018595328",
+                            "name": "Crowdfunding",
+                            "description": "Crowdfunding"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "1074758954444513282",
+                            "name": "Podcasts & radio",
+                            "description": "Podcasts"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "1490751295698837510",
+                            "name": "Podcasts"
+                        }
+                    },
+                    {
+                        "domain": {
+                            "id": "131",
+                            "name": "Unified Twitter Taxonomy",
+                            "description": "A taxonomy of user interests. "
+                        },
+                        "entity": {
+                            "id": "1495096332071026688",
+                            "name": "Business & finance podcasts"
+                        }
+                    }
+                ],
+                "possibly_sensitive": false,
+                "id": "1565439035983675394",
+                "edit_history_tweet_ids": [
+                    "1565439035983675394"
+                ],
+                "created_at": "2022-09-01T20:38:45.000Z",
+                "lang": "en",
+                "text": "Let us conjure up a #horror promotion for YOU!!!🎃 \n\nIf you need a promotion for your #book, #movie, #podcast, crowdfunding campaign, etc please visit https://t.co/FO0J2xXGcX and find out how we can help!!\n\n#promotehorror #SpreadtheHorror https://t.co/yTHAWAkmov",
+                "author_id": "332966388"
+            }
+        ]
+    }
+}
