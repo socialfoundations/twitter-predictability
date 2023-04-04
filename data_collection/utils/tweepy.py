@@ -3,6 +3,7 @@ from datetime import datetime
 import tweepy
 from tweepy.errors import TooManyRequests, TwitterServerError, HTTPException
 from math import ceil
+from retry import retry
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +124,11 @@ def request_error_handler(request_fn):
     return inner_fn
 
 
-@request_error_handler
+@retry(HTTPException, tries=3, delay=5)
+@retry(TooManyRequests, tries=3, delay=60 * 15)
+# 15 minute delays (request quotas are for 15-minute intervals)
+@retry(TwitterServerError, tries=7, delay=3, backoff=3)
+# 3, 9, 18, 54, 162, 486, 1458 seconds delay
 def access_user_data(client, user_id):
     """
     Queries user data, and returns it.
@@ -204,7 +209,6 @@ def create_paginator(config: PaginatorConfig, num_tweets, next_token=None):
     return paginator
 
 
-@request_error_handler
 def collect_and_filter(paginator, filter_conditions, author=None):
     """
     Iterates over paginator, and collects tweets that fit the filter condition.
@@ -259,6 +263,11 @@ def collect_and_filter(paginator, filter_conditions, author=None):
     return timeline, next_token
 
 
+@retry(HTTPException, tries=3, delay=5)
+@retry(TooManyRequests, tries=3, delay=60 * 15)
+# 15 minute delays (request quotas are for 15-minute intervals)
+@retry(TwitterServerError, tries=7, delay=3, backoff=3)
+# 3, 9, 18, 54, 162, 486, 1458 seconds delay
 def get_user_tweets(
     client,
     user_id,

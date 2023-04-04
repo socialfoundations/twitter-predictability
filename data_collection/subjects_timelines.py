@@ -39,10 +39,18 @@ if __name__ == "__main__":
     )
     cfg = wandb.config
 
-    # logging
-    utils.logging.log_to_stdout("main", level=logging.INFO)
-    utils.logging.log_to_stdout("utils", level=logging.INFO)
-    utils.logging.log_to_stdout("tweepy", level=logging.INFO)
+    # set loggers to lower or same level as handlers
+    utils.logging.set_logger_levels(
+        ["main", "utils", "tweepy", "retry"], level=logging.DEBUG
+    )
+
+    # logging handlers - INFO to stdout and DEBUG to file
+    utils.logging.logs_to_stdout(
+        ["main", "utils", "tweepy", "retry"], level=logging.INFO
+    )
+    utils.logging.logs_to_file(
+        ["main", "utils", "tweepy", "retry"], logdir=wandb.run.dir, level=logging.DEBUG
+    )
 
     # setup MongoDB
     main_logger.info("Connecting to %s database..." % cfg["database"])
@@ -83,8 +91,14 @@ if __name__ == "__main__":
     for i, subject in enumerate(cursor):
         main_logger.info("Processing %d, user with id %s..." % (i, subject["id"]))
 
-        # skip users that have been deleted / set to private, etc.
-        if utils.tweepy.access_user_data(client, user_id=subject["id"]) is None:
+        # skip users that are alredy in the subjects collection
+        if utils.mongo.match_in_collection(subjects_collection, {"id": subject["id"]}):
+            main_logger.info("User already processed. Skipping user.")
+            continue
+
+        # skip users that have been deleted / set to private / are protected etc.
+        result = utils.tweepy.access_user_data(client, user_id=subject["id"])
+        if result is None or result["protected"]:
             main_logger.warning("User data could not be accessed. Skipping user.")
             continue
 
@@ -136,10 +150,10 @@ if __name__ == "__main__":
         n_tweets = timelines_collection.count_documents(user_timeline_no_RT_en)
         main_logger.info("%d tweets in collection from %s." % (n_tweets, subject["id"]))
 
-        # save user into subjects collection if enough tweets were collected
-        if n_tweets >= cfg["tweets_per_subject"]:
-            user = users_collection.find_one({"id": subject["id"]})
-            utils.mongo.insert_one(subjects_collection, user)
+        # save user into subjects collection
+        user = users_collection.find_one({"id": subject["id"]})
+        user["timeline_tweets_count"] = n_tweets
+        utils.mongo.insert_one(subjects_collection, user)
 
     # cleanup
     mongo_conn.close()
