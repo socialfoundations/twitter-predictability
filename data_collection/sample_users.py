@@ -19,7 +19,7 @@ main_logger = logging.getLogger("main")
 
 config = {
     "min_tweets": 200,
-    "num_users": 1500,
+    "num_users": 2000,
     "num_timeline_tweets": 200,
     "num_mention_tweets": 100,
     "end_time": "2023-01-19T11:59:59Z",
@@ -150,10 +150,18 @@ if __name__ == "__main__":
     utils.wandb.init_wandb_run(job_type="sample-users", config=config)
     cfg = wandb.config
 
-    # logging
-    utils.logging.log_to_stdout("main", level=logging.INFO)
-    utils.logging.log_to_stdout("utils", level=logging.INFO)
-    utils.logging.log_to_stdout("tweepy", level=logging.INFO)
+    # set loggers to lower or same level as handlers
+    utils.logging.set_logger_levels(
+        ["main", "utils", "tweepy", "retry"], level=logging.DEBUG
+    )
+
+    # logging handlers - INFO to stdout and DEBUG to file
+    utils.logging.logs_to_stdout(
+        ["main", "utils", "tweepy", "retry"], level=logging.INFO
+    )
+    utils.logging.logs_to_file(
+        ["main", "utils", "tweepy", "retry"], logdir=wandb.run.dir, level=logging.DEBUG
+    )
 
     # setup MongoDB
     mongo_conn = MongoClient(os.environ["MONGO_CONN"])
