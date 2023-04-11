@@ -170,16 +170,39 @@ def _tweet_fits(conditions: dict, tweet):
 
 
 class PaginatorConfig:
-    def __init__(self, user_id, minimum, method_fn, expansions, **kwargs):
+    def __init__(
+        self, user_id, minimum, method_fn, expansions, exclude=[], filter=None, **kwargs
+    ):
         self.user_id = user_id
 
         self.max_results = min(
-            100, max(5, minimum)
+            100, max(10, minimum)
         )  # max results per page - 100 is the maximum, 5 is the minimum
 
         self.method_fn = method_fn
+
         self.expansions = expansions
+        self.exclude = exclude
+        self.filter = filter
         self.kwargs = kwargs
+
+        if self.method_fn.__name__ == "search_all_tweets":
+            self.query = self._build_query()
+
+    def _build_query(self):
+        query = f"from:{self.user_id}"
+
+        if "retweets" in self.exclude:
+            query += " -is:retweet"
+
+        if "replies" in self.exclude:
+            query += " -is:reply"
+
+        if self.filter is not None:
+            for key, val in self.filter.items():
+                query += f" {key}:{val}"
+
+        return query
 
 
 def create_paginator(config: PaginatorConfig, num_tweets, next_token=None):
@@ -194,17 +217,32 @@ def create_paginator(config: PaginatorConfig, num_tweets, next_token=None):
     Returns:
         tweepy.Paginator: The created paginator.
     """
-    paginator = tweepy.Paginator(
-        method=config.method_fn,
-        id=config.user_id,
-        expansions=config.expansions,
-        tweet_fields=TWEET_PUBLIC_FIELDS,
-        user_fields=ALL_USER_FIELDS,
-        max_results=config.max_results,  # results per page
-        limit=ceil(num_tweets / config.max_results) + 1,  # number of pages
-        pagination_token=next_token,
-        **config.kwargs,
-    )
+    if config.method_fn.__name__ == "search_all_tweets":
+        # Note - this method does not accept 'end_time' and 'until_id' simultaneously
+        paginator = tweepy.Paginator(
+            method=config.method_fn,
+            query=config.query,
+            expansions=config.expansions,
+            tweet_fields=TWEET_PUBLIC_FIELDS,
+            user_fields=ALL_USER_FIELDS,
+            max_results=config.max_results,  # results per page
+            limit=ceil(num_tweets / config.max_results) + 1,  # number of pages
+            pagination_token=next_token,
+            **config.kwargs,
+        )
+    else:
+        paginator = tweepy.Paginator(
+            method=config.method_fn,
+            id=config.user_id,
+            expansions=config.expansions,
+            tweet_fields=TWEET_PUBLIC_FIELDS,
+            user_fields=ALL_USER_FIELDS,
+            max_results=config.max_results,  # results per page
+            limit=ceil(num_tweets / config.max_results) + 1,  # number of pages
+            pagination_token=next_token,
+            exclude=config.exclude,
+            **config.kwargs,
+        )
 
     return paginator
 
@@ -276,7 +314,8 @@ def get_user_tweets(
     author=None,
     filter_conditions=None,
     max_retries=3,
-    **kwargs
+    exclude=[],
+    **kwargs,
 ):
     """
     Returns tweets from the specified user's timeline.
@@ -285,10 +324,11 @@ def get_user_tweets(
         client (tweepy.Client): Client for Twitter API.
         user_id (int | str): ID of user we want to query.
         minimum (int): Number of tweets we want to pull (returned number of tweets might be higher).
-        method (string): "timeline" or "mentions". Specifies what tweets to pull. Default is "timeline".
-        filter_conditions (dict): A dict of param - value pairs. Specifies conditions that the tweet has to fit.
+        method (string): "timeline", "mentions" or "full-archive". Specifies what tweets to pull. Default is "timeline".
         author (dict | None): Author object of pulled tweets. Default is None.
         filter_conditions (dict | None): A dict of param - value pairs. It specifies what value the params have to take. None if no filtering is needed. Default is None.
+        max_retries (int): How many times to retry collecting tweets after collecting less tweets than expected (because of post-collection filtering for example). Default is 3.
+        exclude (list): A list of what kinds of tweets to exclude (examples: retweets, replies). By default an empty list.
         kwargs: Keyword arguments passed to tweepy.Paginator
 
     Returns:
@@ -300,9 +340,20 @@ def get_user_tweets(
                 "includes":
                     "users": List of user objects related to tweet. First one is author of tweet.
     """
-    method_fn = (
-        client.get_users_mentions if method == "mentions" else client.get_users_tweets
-    )
+    if method == "mentions":
+        method_fn = client.get_users_mentions
+        post_collection_filtering = True
+    elif method == "timeline":
+        method_fn = client.get_users_tweets
+        post_collection_filtering = True
+    elif method == "full-archive":
+        method_fn = client.search_all_tweets
+        post_collection_filtering = False
+    else:
+        raise ValueError(
+            "method must be one of the following: mentions, timeline, full-archive."
+        )
+
     expansions = None if author is not None else "author_id"
 
     paginator_config = PaginatorConfig(
@@ -310,6 +361,8 @@ def get_user_tweets(
         minimum=minimum,
         method_fn=method_fn,
         expansions=expansions,
+        exclude=exclude,
+        filter=filter_conditions,
         **kwargs,
     )
 
@@ -318,9 +371,12 @@ def get_user_tweets(
         num_tweets=minimum,
     )
 
-    timeline, next_token = collect_and_filter(
-        paginator, filter_conditions, author=author
-    )
+    if post_collection_filtering:
+        post_filter = filter_conditions
+    else:
+        post_filter = None
+
+    timeline, next_token = collect_and_filter(paginator, post_filter, author=author)
 
     # if too many tweets were filtered out
     for i in range(max_retries):
@@ -334,7 +390,7 @@ def get_user_tweets(
                 config=paginator_config, num_tweets=missing, next_token=next_token
             )
             tweets, next_token = collect_and_filter(
-                paginator, filter_conditions, author=author
+                paginator, post_filter, author=author
             )
             timeline.extend(tweets)
 
