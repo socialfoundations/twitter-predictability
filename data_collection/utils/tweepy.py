@@ -204,6 +204,37 @@ class PaginatorConfig:
 
         return query
 
+    @property
+    def method_fn(self):
+        return self._method_fn
+
+    @method_fn.setter
+    def method_fn(self, value):
+        valid_methods = ["search_all_tweets", "get_users_mentions", "get_users_tweets"]
+        assert value.__name__ in valid_methods
+        self._method_fn = value
+
+    @property
+    def exclude(self):
+        if self._exclude == []:
+            return None
+        else:
+            return self._exclude
+
+    @exclude.setter
+    def exclude(self, value):
+        permissible_values = ["retweets", "replies"]
+        if isinstance(value, str):
+            assert value in permissible_values
+            self._exclude = [value]
+        elif isinstance(value, list):
+            assert all(val in permissible_values for val in value)
+            self._exclude = value
+        elif value is None:
+            self._exclude = []
+        else:
+            raise ValueError("exclude must be either None, str or list")
+
 
 def create_paginator(config: PaginatorConfig, num_tweets, next_token=None):
     """
@@ -230,7 +261,19 @@ def create_paginator(config: PaginatorConfig, num_tweets, next_token=None):
             pagination_token=next_token,
             **config.kwargs,
         )
-    else:
+    elif config.method_fn.__name__ == "get_users_mentions":
+        paginator = tweepy.Paginator(
+            method=config.method_fn,
+            id=config.user_id,
+            expansions=config.expansions,
+            tweet_fields=TWEET_PUBLIC_FIELDS,
+            user_fields=ALL_USER_FIELDS,
+            max_results=config.max_results,  # results per page
+            limit=ceil(num_tweets / config.max_results) + 1,  # number of pages
+            pagination_token=next_token,
+            **config.kwargs,
+        )
+    elif config.method_fn.__name__ == "get_users_tweets":
         paginator = tweepy.Paginator(
             method=config.method_fn,
             id=config.user_id,
