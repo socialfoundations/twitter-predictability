@@ -30,12 +30,16 @@ if __name__ == "__main__":
     cfg = wandb.config
 
     # set loggers to lower or same level as handlers
-    utils.logging.set_logger_levels(["main", "utils", "tweepy"], level=logging.DEBUG)
+    utils.logging.set_logger_levels(
+        ["main", "utils", "tweepy", "retry"], level=logging.DEBUG
+    )
 
     # logging handlers - INFO to stdout and DEBUG to file
-    utils.logging.logs_to_stdout(["main", "utils", "tweepy"], level=logging.INFO)
+    utils.logging.logs_to_stdout(
+        ["main", "utils", "tweepy", "retry"], level=logging.INFO
+    )
     utils.logging.logs_to_file(
-        ["main", "utils", "tweepy"], logdir=wandb.run.dir, level=logging.DEBUG
+        ["main", "utils", "tweepy", "retry"], logdir=wandb.run.dir, level=logging.DEBUG
     )
 
     # setup MongoDB
