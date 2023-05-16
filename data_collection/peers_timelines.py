@@ -115,7 +115,7 @@ if __name__ == "__main__":
                     {"id": mentioned_id},
                     session=session,
                 )
-                if match and match["timeline_tweets_count"] >= cfg["tweets_per_peer"]:
+                if match:
                     main_logger.debug(
                         "-- Peer already processed. Updating mentioned_by list with %s."
                         % subject_id
@@ -133,7 +133,10 @@ if __name__ == "__main__":
                             }
                         },
                     )
-                    continue
+                    # continue
+                    # skip collection if enough tweets
+                    if match["timeline_tweets_count"] >= cfg["tweets_per_peer"]:
+                        continue
 
                 # skip users that have been deleted / set to private / are protected etc.
                 result = utils.tweepy.access_user_data(client, user_id=mentioned_id)
