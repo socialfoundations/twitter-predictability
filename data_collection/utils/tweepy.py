@@ -290,7 +290,9 @@ def create_paginator(config: PaginatorConfig, num_tweets, next_token=None):
     return paginator
 
 
-def collect_and_filter(paginator, filter_conditions, author=None):
+def collect_and_filter(
+    paginator, filter_conditions, author=None, sleep_between_responses=False
+):
     """
     Iterates over paginator, and collects tweets that fit the filter condition.
     If author is not set and page.includes["users"] includes tweet author, it uses that instead.
@@ -340,6 +342,9 @@ def collect_and_filter(paginator, filter_conditions, author=None):
                 },
             }
             timeline.append(tweet)
+
+        if sleep_between_responses:
+            time.sleep(1)
 
     return timeline, next_token
 
@@ -419,7 +424,10 @@ def get_user_tweets(
     else:
         post_filter = None
 
-    timeline, next_token = collect_and_filter(paginator, post_filter, author=author)
+    sleep = bool(method == "full-archive")
+    timeline, next_token = collect_and_filter(
+        paginator, post_filter, author=author, sleep_between_responses=sleep
+    )
 
     # if too many tweets were filtered out
     for i in range(max_retries):
