@@ -6,5 +6,8 @@ wandb/
 logs/
 *.log
 __pycache__/
-test/converter_diffs/
+src/test/converter_diffs/
+src/network_analysis/gephi
+src/network_analysis/graph_files
 .ipynb_checkpoints
+out
