@@ -1,6 +1,12 @@
+import os
 import re
 
-from datasets import Dataset
+from datasets import Dataset, DatasetDict, load_from_disk
+from dotenv import load_dotenv
+from pymongo import MongoClient
+from utils import get_data_path
+
+load_dotenv()
 
 
 def remove_urls(x):
@@ -114,3 +120,48 @@ def load_context_dataset(db, mode, user_id, before_date):
         )
 
     return context_dataset
+
+
+def load_from_database(db, user_id):
+    # load data
+    tweets_dataset = load_eval_dataset(db, user_id=user_id)
+
+    oldest_tweet = tweets_dataset[0]  # because it's in chronological order
+    user_context = load_context_dataset(
+        db,
+        mode="user",
+        user_id=user_id,
+        before_date=oldest_tweet["created_at"],
+    )
+    peer_context = load_context_dataset(
+        db,
+        mode="peer",
+        user_id=user_id,
+        before_date=oldest_tweet["created_at"],
+    )
+    random_context = load_context_dataset(
+        db,
+        mode="random",
+        user_id=user_id,
+        before_date=oldest_tweet["created_at"],
+    )
+
+    user_dataset = DatasetDict(
+        {
+            "eval": tweets_dataset,
+            "user_context": user_context,
+            "peer_context": peer_context,
+            "random_context": random_context,
+        }
+    )
+
+    return user_dataset
+
+
+def load_dataset(user_id, from_disk=True, data_path=get_data_path()):
+    if from_disk:
+        return load_from_disk(data_path.joinpath(user_id))
+    else:
+        mongo_conn = MongoClient(os.environ["MONGO_CONN"])
+        db = mongo_conn.twitter  # our database
+        return load_from_database(db, user_id=user_id)

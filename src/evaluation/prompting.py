@@ -2,11 +2,11 @@ import os
 
 import numpy as np
 import torch
-from data import load_context_dataset, load_eval_dataset
+from data import load_dataset
 from dotenv import load_dotenv
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
-from pymongo import MongoClient
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from utils import get_data_path
 
 load_dotenv()
 
@@ -56,12 +56,12 @@ def tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
 def user_nlls(config):
     device = torch.device(config["device"])
 
-    mongo_conn = MongoClient(os.environ["MONGO_CONN"])
-    db = mongo_conn.twitter  # our database
-
     # load data
-    tweets_dataset = load_eval_dataset(db, user_id=config["user_id"])
-    oldest_tweet = tweets_dataset[0]  # because it's in chronological order
+    user_path = get_data_path().joinpath(config["user_id"])
+    data = load_dataset(
+        user_id=config["user_id"], from_disk=config["from_disk"], data_path=user_path
+    )
+    tweets_dataset = data["eval"]
 
     # tokenize
     tokenizer = AutoTokenizer.from_pretrained(config["model_id"])
@@ -86,12 +86,7 @@ def user_nlls(config):
 
     tokenized_context = None
     if config["mode"] != "none":
-        context_dataset = load_context_dataset(
-            db,
-            mode=config["mode"],
-            user_id=config["user_id"],
-            before_date=oldest_tweet["created_at"],
-        )
+        context_dataset = data[config["mode"] + "_context"]
 
         # tokenize context
         tokenized_context = tokenize_context(
@@ -105,7 +100,7 @@ def user_nlls(config):
     model = AutoModelForCausalLM.from_pretrained(config["model_id"]).to(device)
 
     # calculate nll, perplexity
-    newline = torch.tensor(tokenizer.encode(config["seq_sep"]))
+    sep = torch.tensor(tokenizer.encode(config["seq_sep"]))
 
     nlls = negative_log_likelihoods(
         batched=config["batched"],
@@ -113,7 +108,7 @@ def user_nlls(config):
         model=model,
         text=tokenized_tweets,
         context=tokenized_context,
-        last_ctxt_token=newline,
+        last_ctxt_token=sep,
         overlap_len=window_length - stride,
         device=device,
         token_level=config["token_level_nlls"],
