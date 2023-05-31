@@ -181,6 +181,10 @@ def user_nlls(config):
     tokenizer = AutoTokenizer.from_pretrained(config["model_id"])
     tweets = config["seq_sep"].join(tweets_dataset["text"])
     window_length = tokenizer.model_max_length - config["ctxt_len"]
+    if config["mode"] == "none":
+        # this ensures we get the probability for generating the first token P(t_1|BOS)
+        # note: there is no difference between eos and bos in gpt2
+        tweets = tokenizer.bos_token + tweets
     tokenizer.pad_token = tokenizer.eos_token
 
     stride = window_length // 2
