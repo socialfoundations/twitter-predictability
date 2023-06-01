@@ -6,7 +6,6 @@ from data import load_dataset
 from dotenv import load_dotenv
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from utils import get_prompt_data_path
 
 load_dotenv()
 
@@ -22,6 +21,10 @@ config = {
     "batch_size": 2,
     "token_level_nlls": True,
 }
+
+
+class TokenizationError(RuntimeError):
+    pass
 
 
 def tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
@@ -47,7 +50,7 @@ def tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
 
     context_length_no_pad = res["attention_mask"].count_nonzero().item()
     if context_length_no_pad < context_len:
-        raise RuntimeWarning(
+        raise TokenizationError(
             f"The provided context (of length {context_length_no_pad}) does not reach specified context length ({context_len})."
         )
 
