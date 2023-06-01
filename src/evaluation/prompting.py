@@ -58,10 +58,7 @@ def user_nlls(config):
     device = torch.device(config["device"])
 
     # load data
-    user_path = get_prompt_data_path().joinpath(config["user_id"])
-    data = load_dataset(
-        user_id=config["user_id"], from_disk=config["from_disk"], data_path=user_path
-    )
+    data = load_dataset(user_id=config["user_id"], from_disk=config["from_disk"])
     tweets_dataset = data["eval"]
 
     # tokenize
