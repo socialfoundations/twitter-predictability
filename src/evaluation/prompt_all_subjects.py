@@ -8,8 +8,9 @@ import numpy as np
 load_dotenv()
 
 config = {
-    "device": "cpu",
+    "device": "cuda",
     "model_id": "gpt2",
+    "skip_if_exists": True,
 }
 
 
@@ -23,17 +24,22 @@ def main():
         "ctxt_len": 900,
         "seq_sep": "\n",
         "batched": True,
-        "batch_size": 2,
+        "batch_size": 8,
         "token_level_nlls": True,
     }
 
     modes = ["none", "user", "peer", "random"]
 
     for s_id in tqdm(subjects, desc="subject", position=0):
+        if config["skip_if_exists"]:
+            user_res_path = get_prompt_results_path.join(s_id)
+            path_exists = os.path.exists(user_res_path)
+            if path_exists and os.listdir(user_res_path):
+                continue
         nlls_config["user_id"] = s_id
         for m in tqdm(modes, desc="mode", position=1, leave=False):
             nlls_config["mode"] = m
-            nlls = user_nlls(config=nlls_config).numpy()
+            nlls = user_nlls(config=nlls_config).cpu().numpy()
 
             res_dir = get_prompt_results_path().joinpath(s_id)
             if not os.path.exists(res_dir):
