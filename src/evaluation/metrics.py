@@ -87,7 +87,7 @@ def _batched_negative_log_likelihoods(
     ).with_format("torch")
     batched_data = DataLoader(data, batch_size=batch_size)
 
-    for batch in tqdm(batched_data):
+    for batch in tqdm(batched_data, leave=False):
         with torch.no_grad():
             outputs = model(
                 batch["input_ids"].to(device),
@@ -118,7 +118,7 @@ def _non_batched_negative_log_likelihoods(
     first_pass = True
     nlls = []
     for text_input_ids, text_attention_mask in tqdm(
-        zip(text["input_ids"], text["attention_mask"])
+        zip(text["input_ids"], text["attention_mask"]), leave=False
     ):
         if context is not None:
             context_len = len(context["input_ids"])
