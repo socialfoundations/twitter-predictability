@@ -137,6 +137,13 @@ def load_context_dataset(
     return context_dataset
 
 
+class DataLoadingException(Exception):
+    def __init__(self, message, subject_id, *args: object) -> None:
+        self.subject_id = subject_id
+        message = f"Exception occured while processing {subject_id}: " + message
+        super().__init__(message, *args)
+
+
 def load_from_database(db, user_id):
     # load data
     tweets_dataset = load_eval_dataset(db, user_id=user_id)
@@ -157,6 +164,10 @@ def load_from_database(db, user_id):
 
     # determine oldest tweet for fair comparison
     num_peer_tweets = len(peer_context)
+
+    if num_peer_tweets == 0:
+        raise DataLoadingException("Number of peer tweets is 0.", subject_id=user_id)
+
     # get 90th percentile index
     idx = round(num_peer_tweets * 0.1)
     after_date = peer_context[idx]["created_at"]
@@ -174,6 +185,9 @@ def load_from_database(db, user_id):
         sample_size=num_peer_tweets,
         author_blacklist=list(forbidden_authors),
     )
+
+    if len(random_context) == 0:
+        raise DataLoadingException("Number of random tweets is 0.", subject_id=user_id)
 
     user_dataset = DatasetDict(
         {
