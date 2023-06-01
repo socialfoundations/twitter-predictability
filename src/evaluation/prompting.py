@@ -6,7 +6,7 @@ from data import load_dataset
 from dotenv import load_dotenv
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from utils import get_data_path
+from utils import get_prompt_data_path
 
 load_dotenv()
 
@@ -57,7 +57,7 @@ def user_nlls(config):
     device = torch.device(config["device"])
 
     # load data
-    user_path = get_data_path().joinpath(config["user_id"])
+    user_path = get_prompt_data_path().joinpath(config["user_id"])
     data = load_dataset(
         user_id=config["user_id"], from_disk=config["from_disk"], data_path=user_path
     )

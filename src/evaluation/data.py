@@ -4,7 +4,7 @@ import re
 from datasets import Dataset, DatasetDict, load_from_disk
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from utils import get_data_path
+from utils import get_prompt_data_path
 
 load_dotenv()
 
@@ -44,9 +44,19 @@ def load_eval_dataset(db, user_id):
     return tweets_dataset
 
 
-def load_context_dataset(db, mode, user_id, before_date):
+def load_context_dataset(
+    db,
+    mode,
+    user_id,
+    before_date,
+    after_date=None,
+    sample_size=150,
+    author_blacklist=[],
+):
     timelines_collection = db["timelines_collection"]
     peers_collection = db["peers_collection"]
+
+    assert mode in ["user", "peer", "random"]
 
     if mode == "user":
         user_tweets = list(
@@ -97,17 +107,22 @@ def load_context_dataset(db, mode, user_id, before_date):
             .shuffle(56)
         )
     elif mode == "random":
+        if after_date is not None:
+            time_condition = {"$lt": before_date, "$gte": after_date}
+        else:
+            time_condition = {"$lt": before_date}
         rand_user_tweets = list(
             timelines_collection.aggregate(
                 [
                     {
                         "$match": {
+                            "author_id": {"$nin": author_blacklist},
                             "referenced_tweets.type": {"$ne": "retweeted"},
                             "lang": "en",
-                            "created_at": {"$lt": before_date},
+                            "created_at": time_condition,
                         }
                     },
-                    {"$sample": {"size": 150}},
+                    {"$sample": {"size": sample_size}},
                     {"$project": {"_id": 0}},
                 ]
             )
@@ -139,11 +154,25 @@ def load_from_database(db, user_id):
         user_id=user_id,
         before_date=oldest_tweet["created_at"],
     )
+
+    # determine oldest tweet for fair comparison
+    num_peer_tweets = len(peer_context)
+    # get 90th percentile index
+    idx = round(num_peer_tweets * 0.1)
+    after_date = peer_context[idx]["created_at"]
+
+    # peers list + subject not to be included in random user authors
+    forbidden_authors = set(peer_context[:]["author_id"])
+    forbidden_authors.add(user_id)
+
     random_context = load_context_dataset(
         db,
         mode="random",
         user_id=user_id,
         before_date=oldest_tweet["created_at"],
+        after_date=after_date,
+        sample_size=num_peer_tweets,
+        author_blacklist=list(forbidden_authors),
     )
 
     user_dataset = DatasetDict(
@@ -158,7 +187,7 @@ def load_from_database(db, user_id):
     return user_dataset
 
 
-def load_dataset(user_id, from_disk=True, data_path=get_data_path()):
+def load_dataset(user_id, from_disk=True, data_path=get_prompt_data_path()):
     if from_disk:
         return load_from_disk(data_path.joinpath(user_id))
     else:
