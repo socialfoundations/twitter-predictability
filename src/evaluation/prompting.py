@@ -11,6 +11,7 @@ from utils import get_prompt_data_path
 load_dotenv()
 
 config = {
+    "from_disk": True,
     "device": "cpu",
     "user_id": "1308026329",
     "model_id": "gpt2",
