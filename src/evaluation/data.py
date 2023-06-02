@@ -205,6 +205,6 @@ def load_dataset(user_id, from_disk=True, data_path=get_prompt_data_path()):
     if from_disk:
         return load_from_disk(data_path.joinpath(user_id))
     else:
-        mongo_conn = MongoClient(os.environ["MONGO_CONN"])
-        db = mongo_conn.twitter  # our database
-        return load_from_database(db, user_id=user_id)
+        with MongoClient(os.environ["MONGO_CONN"]) as mongo_conn:
+            db = mongo_conn.twitter  # our database
+            return load_from_database(db, user_id=user_id)

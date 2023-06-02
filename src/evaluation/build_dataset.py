@@ -39,38 +39,38 @@ def save_single_user_dataset(user_id):
 
 
 def main(config):
-    mongo_conn = MongoClient(os.environ["MONGO_CONN"])
-    db = mongo_conn.twitter  # our database
+    with MongoClient(os.environ["MONGO_CONN"]) as mongo_conn:
+        db = mongo_conn.twitter  # our database
 
-    if config["single_user"]:
-        save_single_user_dataset(db, user_id=config["user_id"])
-    else:
-        # subjects collection
-        subjects_collection = db.subjects_collection
-
-        cursor = subjects_collection.find(
-            {
-                "timeline_tweets_count": {"$gte": config["min_subject_tweets"]},
-            }
-        )
-
-        subject_ids = list(map(lambda x: x["id"], cursor))
-        max_ = len(subject_ids)
-
-        if config["multiproc"]:
-            count = cpu_count()
-            print(f"Starting {count} processes for {max_} subjects...")
-            with Pool(count) as p:
-                with tqdm(total=max_) as pbar:
-                    for _ in p.imap_unordered(
-                        save_single_user_dataset,
-                        subject_ids,
-                    ):
-                        pbar.update(1)
-                pbar.close()
+        if config["single_user"]:
+            save_single_user_dataset(db, user_id=config["user_id"])
         else:
-            for id in tqdm(subject_ids):
-                save_single_user_dataset(id)
+            # subjects collection
+            subjects_collection = db.subjects_collection
+
+            cursor = subjects_collection.find(
+                {
+                    "timeline_tweets_count": {"$gte": config["min_subject_tweets"]},
+                }
+            )
+
+            subject_ids = list(map(lambda x: x["id"], cursor))
+            max_ = len(subject_ids)
+
+            if config["multiproc"]:
+                count = cpu_count()
+                print(f"Starting {count} processes for {max_} subjects...")
+                with Pool(count) as p:
+                    with tqdm(total=max_) as pbar:
+                        for _ in p.imap_unordered(
+                            save_single_user_dataset,
+                            subject_ids,
+                        ):
+                            pbar.update(1)
+                    pbar.close()
+            else:
+                for id in tqdm(subject_ids):
+                    save_single_user_dataset(id)
 
 
 if __name__ == "__main__":
