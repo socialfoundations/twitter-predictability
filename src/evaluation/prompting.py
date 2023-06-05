@@ -76,19 +76,19 @@ def user_nlls(config):
     tokenizer = AutoTokenizer.from_pretrained(config["model_id"])
     tweets = config["seq_sep"].join(tweets_dataset["text"])
 
-    if config["window_len"] and config["ctxt_len"]:
+    if config["window_len"] is not None and config["ctxt_len"] is not None:
         # check if total length does not exceed max sequence length
         assert (
             config["window_len"] + config["ctxt_len"] <= tokenizer.model_max_length
         ), f"Total length exceeds max sequence length {tokenizer.model_max_length}!"
         window_length, context_length = config["window_len"], config["ctxt_len"]
-    elif config["window_len"]:
+    elif config["window_len"] is not None:
         assert (
             config["window_len"] <= tokenizer.model_max_length
         ), f"Window length exceeds max sequence length {tokenizer.model_max_length}!"
         window_length = config["window_len"]
         context_length = tokenizer.model_max_length - window_length
-    elif config["ctxt_len"]:
+    elif config["ctxt_len"] is not None:
         assert (
             config["ctxt_len"] <= tokenizer.model_max_length
         ), f"Context length exceeds max sequence length! {tokenizer.model_max_length}"
