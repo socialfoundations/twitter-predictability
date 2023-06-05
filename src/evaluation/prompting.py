@@ -17,6 +17,7 @@ config = {
     "model_id": "gpt2",
     "ctxt_len": 900,
     "window_len": None,
+    "stride": "half",
     "mode": "none",
     "seq_sep": "\n",
     "batched": True,
@@ -105,7 +106,12 @@ def user_nlls(config):
         tweets = tokenizer.bos_token + tweets
     tokenizer.pad_token = tokenizer.eos_token
 
-    stride = window_length // 2
+    if config["stride"] == "half":
+        stride = window_length // 2
+    else:
+        assert config["stride"] > 0
+        stride = config["stride"]
+        
     tokenized_tweets = tokenizer(
         tweets,
         return_overflowing_tokens=True,  # sliding window
