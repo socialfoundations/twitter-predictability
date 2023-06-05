@@ -6,6 +6,7 @@ from data import load_dataset
 from dotenv import load_dotenv
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import warnings
 
 load_dotenv()
 
@@ -15,6 +16,7 @@ config = {
     "user_id": "1308026329",
     "model_id": "gpt2",
     "ctxt_len": 900,
+    "window_len": None,
     "mode": "none",
     "seq_sep": "\n",
     "batched": True,
@@ -58,6 +60,12 @@ def tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
 
 
 def user_nlls(config):
+    if config["ctxt_len"] == 0 and config["mode"] != "none":
+        warnings.warn(
+            f"Context length is 0, while mode of running is context={config['mode']}. Overriding it to 'none'."
+        )
+        config["mode"] = "none"
+
     device = torch.device(config["device"])
 
     # load data
@@ -67,7 +75,30 @@ def user_nlls(config):
     # tokenize
     tokenizer = AutoTokenizer.from_pretrained(config["model_id"])
     tweets = config["seq_sep"].join(tweets_dataset["text"])
-    window_length = tokenizer.model_max_length - config["ctxt_len"]
+
+    if config["window_len"] and config["ctxt_len"]:
+        # check if total length does not exceed max sequence length
+        assert (
+            config["window_len"] + config["ctxt_len"] <= tokenizer.model_max_length
+        ), f"Total length exceeds max sequence length {tokenizer.model_max_length}!"
+        window_length, context_length = config["window_len"], config["ctxt_len"]
+    elif config["window_len"]:
+        assert (
+            config["window_len"] <= tokenizer.model_max_length
+        ), f"Window length exceeds max sequence length {tokenizer.model_max_length}!"
+        window_length = config["window_len"]
+        context_length = tokenizer.model_max_length - window_length
+    elif config["ctxt_len"]:
+        assert (
+            config["ctxt_len"] <= tokenizer.model_max_length
+        ), f"Context length exceeds max sequence length! {tokenizer.model_max_length}"
+        context_length = config["ctxt_len"]
+        window_length = tokenizer.model_max_length - context_length
+    else:
+        raise RuntimeError(
+            "Need to specify at least one of these arguments: window_len, ctxt_len"
+        )
+
     if config["mode"] == "none":
         # this ensures we get the probability for generating the first token P(t_1|BOS)
         # note: there is no difference between eos and bos in gpt2
@@ -93,7 +124,7 @@ def user_nlls(config):
         tokenized_context = tokenize_context(
             tokenizer,
             context_dataset,
-            context_len=config["ctxt_len"],
+            context_len=context_length,
             tweet_separator=config["seq_sep"],
         )
 
