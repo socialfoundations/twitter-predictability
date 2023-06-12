@@ -21,6 +21,7 @@ https://huggingface.co/models?filter=text-generation
 """
 # You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
 
+import preprocessing as preproc
 from dotenv import load_dotenv
 
 # load environment variables
@@ -37,9 +38,8 @@ from typing import Optional
 import datasets
 import evaluate
 import torch
-from datasets import load_dataset
-
 import transformers
+from datasets import load_dataset
 from transformers import (
     CONFIG_MAPPING,
     MODEL_FOR_CAUSAL_LM_MAPPING,
@@ -506,11 +506,33 @@ def main():
         model.resize_token_embeddings(len(tokenizer))
 
     # Preprocessing the datasets.
+    def preprocessing_steps(examples):
+        return preproc.remove_extra_spaces_batch(
+            preproc.remove_urls_batch(
+                preproc.replace_special_characters_batch(examples)
+            )
+        )
+
+    with training_args.main_process_first(desc="preprocess dataset"):
+        if not data_args.streaming:
+            prepocessed_datasets = raw_datasets.map(
+                preprocessing_steps,
+                batched=True,
+                num_proc=data_args.preprocessing_num_workers,
+                load_from_cache_file=not data_args.overwrite_cache,
+                desc="Preprocessing dataset (removing URLs, special characters, etc...)",
+            )
+        else:
+            prepocessed_datasets = raw_datasets.map(
+                preprocessing_steps,
+                batched=True,
+            )
+
     # First we tokenize all the texts.
     if training_args.do_train:
-        column_names = list(raw_datasets["train"].features)
+        column_names = list(prepocessed_datasets["train"].features)
     else:
-        column_names = list(raw_datasets["validation"].features)
+        column_names = list(prepocessed_datasets["validation"].features)
     text_column_name = "text" if "text" in column_names else column_names[0]
 
     # since this will be pickled to avoid _LazyModule error in Hasher force logger loading before tokenize_function
@@ -531,7 +553,7 @@ def main():
 
     with training_args.main_process_first(desc="dataset map tokenization"):
         if not data_args.streaming:
-            tokenized_datasets = raw_datasets.map(
+            tokenized_datasets = prepocessed_datasets.map(
                 tokenize_function,
                 batched=True,
                 num_proc=data_args.preprocessing_num_workers,
@@ -540,7 +562,7 @@ def main():
                 desc="Running tokenizer on dataset",
             )
         else:
-            tokenized_datasets = raw_datasets.map(
+            tokenized_datasets = prepocessed_datasets.map(
                 tokenize_function,
                 batched=True,
                 remove_columns=column_names,
