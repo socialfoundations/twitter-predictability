@@ -62,6 +62,7 @@ import wandb
 
 wandb.init(project=os.environ["WANDB_PROJECT"], entity=os.environ["WANDB_ENTITY"])
 
+
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 # check_min_version("4.27.0.dev0")
 
@@ -491,6 +492,7 @@ def main():
             revision=model_args.model_revision,
             use_auth_token=True if model_args.use_auth_token else None,
             torch_dtype=torch_dtype,
+            use_safetensors=False,
         )
     else:
         model = AutoModelForCausalLM.from_config(config)
