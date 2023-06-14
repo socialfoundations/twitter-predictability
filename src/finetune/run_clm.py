@@ -60,8 +60,8 @@ from transformers.utils.versions import require_version
 
 import wandb
 
-wandb.init(project=os.environ["WANDB_PROJECT"], entity=os.environ["WANDB_ENTITY"])
-
+run = wandb.init(project=os.environ["WANDB_PROJECT"], entity=os.environ["WANDB_ENTITY"], job_type="finetune", tags=["debug"])
+run.log_code()
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 # check_min_version("4.27.0.dev0")
