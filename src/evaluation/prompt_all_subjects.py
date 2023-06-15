@@ -1,50 +1,58 @@
-from prompting import user_nlls, TokenizationError
-import os, logging
-from dotenv import load_dotenv
-from utils import get_prompt_results_path, get_prompt_data_path
-from tqdm import tqdm
+import logging
+import os
+
 import numpy as np
+from dotenv import load_dotenv
+from prompting import PromptingArguments, TokenizationError, user_nlls
+from tqdm import tqdm
+from transformers import HfArgumentParser
+from utils import get_prompt_data_path, get_prompt_results_path
 
 load_dotenv()
 
 main_logger = logging.getLogger("main")
 
-config = {
-    "device": "cuda",
-    "model_id": "gpt2",
-    "skip_if_exists": True,
-}
-
 
 def main():
-    subjects = os.listdir(get_prompt_data_path())
+    parser = HfArgumentParser(PromptingArguments)
+    parser.add_argument(
+        "--subjects_file",
+        default=None,
+        help="File containing the subject ids that should be processed. If None, then all subjects are procesed that have a dataset.",
+    )
+    parser.add_argument(
+        "--skip_if_exists",
+        default=True,
+        help="Skip subjects that already have a directory with results.",
+    )
+    (prompting_args, script_args) = parser.parse_args_into_dataclasses()
 
-    nlls_config = {
-        "from_disk": True,
-        "device": config["device"],
-        "model_id": config["model_id"],
-        "ctxt_len": 900,
-        "seq_sep": "\n",
-        "batched": True,
-        "batch_size": 8,
-        "token_level_nlls": True,
-    }
+    if script_args.subjects_file is None:
+        # get all subjects
+        subjects = os.listdir(get_prompt_data_path())
+    else:
+
+        if os.path.exists(script_args.subjects_file):
+            with open(script_args.subjects_file, "r") as f:
+                subjects = f.read().splitlines()
+        else:
+            raise RuntimeError(f"{script_args.subjects_file} doesn't exist.")
 
     modes = ["none", "user", "peer", "random"]
 
     for s_id in tqdm(subjects, desc="subject", position=0):
-        if config["skip_if_exists"]:
+        if script_args.skip_if_exists:
             user_res_path = get_prompt_results_path().joinpath(s_id)
             path_exists = os.path.exists(user_res_path)
             if path_exists and os.listdir(user_res_path):
                 continue
-        nlls_config["user_id"] = s_id
+        prompting_args.user_id = s_id
         try:
             # collect nlls for each mode
             results = {}
             for m in tqdm(modes, desc="mode", position=1, leave=False):
-                nlls_config["mode"] = m
-                results[m] = user_nlls(config=nlls_config).cpu().numpy()
+                prompting_args.mode = m
+                results[m] = user_nlls(config=prompting_args).cpu().numpy()
 
             # save results
             res_dir = get_prompt_results_path().joinpath(s_id)
