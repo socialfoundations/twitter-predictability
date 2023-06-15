@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -62,6 +63,8 @@ def main():
                 res_file = res_dir.joinpath(f"{mode}.npy")
                 with open(res_file, "wb") as f:
                     np.save(f, nlls)
+            # save arguments (mode will be the last set mode, eg. 'random')
+            json.dump(prompting_args.__dict__, open(res_dir.joinpath("args.json"), "w"))
         except TokenizationError as e:
             main_logger.error(f"Subject id: {s_id} (context={m}). Error message: {e}")
 
