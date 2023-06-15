@@ -17,6 +17,18 @@ def remove_extra_spaces(x):
     return {"text": " ".join(x["text"].split())}
 
 
+def replace_special_characters(x):
+    text = x["text"]
+    text = text.replace("&amp;", "&")
+    text = text.replace("&lt;", "<")
+    text = text.replace("&gt;", ">")
+    return {"text": text}
+
+
+def replace_mentions(x):
+    return {"text": re.sub(r"@\S+", "", x["text"])}
+
+
 def load_eval_dataset(db, user_id):
     timelines_collection = db["timelines_collection"]
 
@@ -37,6 +49,7 @@ def load_eval_dataset(db, user_id):
         .select(
             range(len(user_tweets))[-250:]
         )  # we want last 250 tweets (most recent!)
+        .map(replace_special_characters)
         .map(remove_urls)
         .map(remove_extra_spaces)
     )
@@ -76,6 +89,7 @@ def load_context_dataset(
             .select(
                 range(len(user_tweets))[-250:]
             )  # we want last 250 tweets (most recent!)
+            .map(replace_special_characters)
             .map(remove_urls)
             .map(remove_extra_spaces)
         )
@@ -102,6 +116,7 @@ def load_context_dataset(
         context_dataset = (
             Dataset.from_list(peer_tweets)
             # .sort("created_at")
+            .map(replace_special_characters)
             .map(remove_urls)
             .map(remove_extra_spaces)
             .shuffle(56)
@@ -129,6 +144,7 @@ def load_context_dataset(
         )
         context_dataset = (
             Dataset.from_list(rand_user_tweets)
+            .map(replace_special_characters)
             .map(remove_urls)
             .map(remove_extra_spaces)
             .shuffle(56)
