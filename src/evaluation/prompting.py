@@ -8,6 +8,7 @@ from data import load_dataset
 from dotenv import load_dotenv
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
 from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
+from utils import get_prompt_data_path
 
 load_dotenv()
 
@@ -139,7 +140,11 @@ def user_nlls(config: PromptingArguments):
     device = torch.device(config.device)
 
     # load data
-    data = load_dataset(user_id=config.user_id, from_disk=config.from_disk)
+    data = load_dataset(
+        user_id=config.user_id,
+        from_disk=config.from_disk,
+        data_path=get_prompt_data_path(),
+    )
     tweets_dataset = data["eval"]
 
     # tokenize

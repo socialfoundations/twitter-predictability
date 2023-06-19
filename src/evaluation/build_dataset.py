@@ -32,7 +32,9 @@ def save_single_user_dataset(user_id):
             return
 
     try:
-        user_dataset = load_dataset(user_id=user_id, from_disk=False)
+        user_dataset = load_dataset(
+            user_id=user_id, from_disk=False, data_path=get_prompt_data_path()
+        )
         user_dataset.save_to_disk(user_data_path)
     except DataLoadingException as e:
         main_logger.error(f"Skipping user. {e}")
