@@ -282,10 +282,12 @@ def _window_context_stride(config: PromptingArguments, tokenizer):
     return window_length, context_length, stride
 
 
-def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep):
-    # this ensures we get the probability for generating the first token P(t_1|BOS)
-    # even when there is no context preceding the first eval token
-    tweets = tokenizer.bos_token + seq_sep.join(data["text"])
+def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep, mode):
+    tweets = seq_sep.join(data["text"])
+    if mode == "none":
+        # this ensures we get the probability for generating the first token P(t_1|BOS)
+        # even when there is no context preceding the first eval token
+        tweets = tokenizer.bos_token + tweets
 
     tokenized_tweets = tokenizer(
         tweets,
@@ -313,12 +315,17 @@ def all_modes_user_nlls(config: PromptingArguments):
 
     window_length, context_length, stride = _window_context_stride(config, tokenizer)
 
-    tokenized_tweets = _tokenize_eval_data(
-        data["eval"], tokenizer, window_length, stride, seq_sep=config.seq_sep
-    )
-
     results = {}
     for mode in ["none", "user", "peer", "random"]:
+        tokenized_tweets = _tokenize_eval_data(
+            data["eval"],
+            tokenizer,
+            window_length,
+            stride,
+            seq_sep=config.seq_sep,
+            mode=mode,
+        )
+
         if mode != "none":
             tokenized_context = tokenize_context(
                 tokenizer,
