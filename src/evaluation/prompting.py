@@ -229,6 +229,125 @@ def user_nlls(config: PromptingArguments):
     return torch.stack(nlls)
 
 
+def _data_model_tokenizer(config: PromptingArguments):
+    device = torch.device(config.device)
+
+    # load data
+    data = load_dataset(
+        user_id=config.user_id,
+        from_disk=config.from_disk,
+        data_path=get_prompt_data_path(),
+    ).sort("created_at")
+
+    # load model
+    model = AutoModelForCausalLM.from_pretrained(config.model_id).to(device)
+
+    # load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(config.model_id)
+    tokenizer.pad_token = tokenizer.eos_token
+
+    return data, model, tokenizer
+
+
+def _window_context_stride(config: PromptingArguments, tokenizer):
+    if config.window_len is not None and config.ctxt_len is not None:
+        # check if total length does not exceed max sequence length
+        assert (
+            config.window_len + config.ctxt_len <= tokenizer.model_max_length
+        ), f"Total length exceeds max sequence length {tokenizer.model_max_length}!"
+        window_length, context_length = config.window_len, config.ctxt_len
+    elif config.window_len is not None:
+        assert (
+            config.window_len <= tokenizer.model_max_length
+        ), f"Window length exceeds max sequence length {tokenizer.model_max_length}!"
+        window_length = config.window_len
+        context_length = tokenizer.model_max_length - window_length
+    elif config.ctxt_len is not None:
+        assert (
+            config.ctxt_len <= tokenizer.model_max_length
+        ), f"Context length exceeds max sequence length! {tokenizer.model_max_length}"
+        context_length = config.ctxt_len
+        window_length = tokenizer.model_max_length - context_length
+    else:
+        raise RuntimeError(
+            "Need to specify at least one of these arguments: window_len, ctxt_len"
+        )
+
+    if config.stride == None:
+        stride = window_length // 2
+    else:
+        assert config.stride > 0
+        stride = config.stride
+
+    return window_length, context_length, stride
+
+
+def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep):
+    # this ensures we get the probability for generating the first token P(t_1|BOS)
+    # even when there is no context preceding the first eval token
+    tweets = tokenizer.bos_token + seq_sep.join(data["text"])
+
+    tokenized_tweets = tokenizer(
+        tweets,
+        return_overflowing_tokens=True,  # sliding window
+        max_length=window_length,
+        stride=stride,  # number of overlapping tokens
+        truncation=True,
+        padding=True,
+        return_tensors="pt",
+    )
+    return tokenized_tweets
+
+
+def all_modes_user_nlls(config: PromptingArguments):
+    """
+    Runs prompting evaluation for all modes.
+
+    Args:
+        config (PromptingArguments): Arguments for prompting. 'mode' in this case will be disregarded.
+
+    Returns:
+        dict: Dictionary of numpy arrays. The arrays contain token nlls for all of the following modes: ['none', 'user', 'peer', 'random'].
+    """
+    data, model, tokenizer = _data_model_tokenizer(config)
+
+    window_length, context_length, stride = _window_context_stride(config, tokenizer)
+
+    tokenized_tweets = _tokenize_eval_data(
+        data["eval"], tokenizer, window_length, stride, seq_sep=config.seq_sep
+    )
+
+    results = {}
+    for mode in ["none", "user", "peer", "random"]:
+
+        tokenized_context = tokenize_context(
+            tokenizer,
+            data[mode + "_context"],
+            context_length,
+            tweet_separator=config.seq_sep,
+        )
+
+        nlls = (
+            negative_log_likelihoods(
+                batched=config.batched,
+                batch_size=config.batch_size,
+                model=model,
+                text=tokenized_tweets,
+                context=tokenized_context,
+                last_ctxt_token=torch.tensor(tokenizer.encode(config.seq_sep)),
+                overlap_len=window_length - stride,
+                device=torch.device(config.device),
+                token_level=config.token_level_nlls,
+            )
+            .cpu()
+            .numpy()
+        )
+
+        results[mode] = nlls
+
+    return results
+
+
 def main():
     parser = HfArgumentParser(PromptingArguments)
     (config,) = parser.parse_args_into_dataclasses()

@@ -4,7 +4,12 @@ import os
 
 import numpy as np
 from dotenv import load_dotenv
-from prompting import PromptingArguments, TokenizationError, user_nlls
+from prompting import (
+    PromptingArguments,
+    TokenizationError,
+    user_nlls,
+    all_modes_user_nlls,
+)
 from tqdm import tqdm
 from transformers import HfArgumentParser
 from utils import get_prompt_data_path, get_prompt_results_path
@@ -27,11 +32,9 @@ def main():
         help="Skip subjects that already have a directory with results.",
     )
     (prompting_args, script_args) = parser.parse_args_into_dataclasses()
-    
-    
-    model_name = prompting_args.model_id.split('/')[-1]
+
+    model_name = prompting_args.model_id.split("/")[-1]
     print(f"Running evaluation on {model_name}")
-    
 
     if script_args.subjects_file is None:
         # get all subjects
@@ -48,17 +51,16 @@ def main():
 
     for s_id in tqdm(subjects, desc="subject", position=0):
         if script_args.skip_if_exists:
-            user_res_path = get_prompt_results_path().joinpath(model_name).joinpath(s_id)
+            user_res_path = (
+                get_prompt_results_path().joinpath(model_name).joinpath(s_id)
+            )
             path_exists = os.path.exists(user_res_path)
             if path_exists and os.listdir(user_res_path):
                 continue
         prompting_args.user_id = s_id
         try:
             # collect nlls for each mode
-            results = {}
-            for m in tqdm(modes, desc="mode", position=1, leave=False):
-                prompting_args.mode = m
-                results[m] = user_nlls(config=prompting_args).cpu().numpy()
+            results = all_modes_user_nlls(prompting_args)
 
             # save results
             res_dir = get_prompt_results_path().joinpath(model_name).joinpath(s_id)
