@@ -336,21 +336,19 @@ def all_modes_user_nlls(config: PromptingArguments):
         else:
             tokenized_context = None
 
-        nlls = (
-            negative_log_likelihoods(
-                batched=config.batched,
-                batch_size=config.batch_size,
-                model=model,
-                text=tokenized_tweets,
-                context=tokenized_context,
-                last_ctxt_token=torch.tensor(tokenizer.encode(config.seq_sep)),
-                overlap_len=window_length - stride,
-                device=torch.device(config.device),
-                token_level=config.token_level_nlls,
-            )
-            .cpu()
-            .numpy()
+        nlls = negative_log_likelihoods(
+            batched=config.batched,
+            batch_size=config.batch_size,
+            model=model,
+            text=tokenized_tweets,
+            context=tokenized_context,
+            last_ctxt_token=torch.tensor(tokenizer.encode(config.seq_sep)),
+            overlap_len=window_length - stride,
+            device=torch.device(config.device),
+            token_level=config.token_level_nlls,
         )
+
+        nlls = torch.stack(nlls).cpu().numpy()
 
         results[mode] = nlls
 
