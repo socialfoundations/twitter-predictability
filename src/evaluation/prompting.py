@@ -319,13 +319,15 @@ def all_modes_user_nlls(config: PromptingArguments):
 
     results = {}
     for mode in ["none", "user", "peer", "random"]:
-
-        tokenized_context = tokenize_context(
-            tokenizer,
-            data[mode + "_context"],
-            context_length,
-            tweet_separator=config.seq_sep,
-        )
+        if mode != "none":
+            tokenized_context = tokenize_context(
+                tokenizer,
+                data[mode + "_context"],
+                context_length,
+                tweet_separator=config.seq_sep,
+            )
+        else:
+            tokenized_context = None
 
         nlls = (
             negative_log_likelihoods(
