@@ -144,7 +144,7 @@ def user_nlls(config: PromptingArguments):
         user_id=config.user_id,
         from_disk=config.from_disk,
         data_path=get_prompt_data_path(),
-    )
+    ).sort("created_at")
     tweets_dataset = data["eval"]
 
     # tokenize
