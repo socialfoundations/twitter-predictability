@@ -73,7 +73,7 @@ def main():
             # save arguments (mode will be the last set mode, eg. 'random')
             json.dump(prompting_args.__dict__, open(res_dir.joinpath("args.json"), "w"))
         except TokenizationError as e:
-            main_logger.error(f"Subject id: {s_id} (context={m}). Error message: {e}")
+            main_logger.error(f"Subject id: {s_id}. Error message: {e}")
 
 
 if __name__ == "__main__":
