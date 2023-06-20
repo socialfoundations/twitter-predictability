@@ -53,6 +53,8 @@ from transformers import (
     is_torch_tpu_available,
     set_seed,
 )
+from tokenizers import Tokenizer
+from tokenizers.processors import TemplateProcessing
 from transformers.testing_utils import CaptureLogger
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
@@ -60,8 +62,6 @@ from transformers.utils.versions import require_version
 
 import wandb
 
-run = wandb.init(project=os.environ["WANDB_PROJECT"], entity=os.environ["WANDB_ENTITY"], job_type="finetune", tags=["debug"])
-run.log_code()
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 # check_min_version("4.27.0.dev0")
@@ -276,6 +276,8 @@ class DataTrainingArguments:
 
 
 def main():
+    run = wandb.init(project=os.environ["WANDB_PROJECT"], entity=os.environ["WANDB_ENTITY"], job_type="finetune")
+    run.log_code()
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
@@ -477,6 +479,12 @@ def main():
             "You are instantiating a new tokenizer from scratch. This is not supported by this script."
             "You can do it from another script, save it, and load it from here, using --tokenizer_name."
         )
+
+    # add custom post-processing to the tokenizer
+    tokenizer._tokenizer.post_processor = TemplateProcessing(
+        single="$A " + tokenizer.eos_token, # add eos at the end of each tweet
+        special_tokens=[(tokenizer.eos_token, 1)],
+    )
 
     if model_args.model_name_or_path:
         torch_dtype = (
@@ -738,6 +746,8 @@ def main():
         trainer.push_to_hub(**kwargs)
     else:
         trainer.create_model_card(**kwargs)
+
+    run.finish()
 
 
 def _mp_fn(index):
