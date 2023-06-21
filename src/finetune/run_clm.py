@@ -276,7 +276,11 @@ class DataTrainingArguments:
 
 
 def main():
-    run = wandb.init(project=os.environ["WANDB_PROJECT"], entity=os.environ["WANDB_ENTITY"], job_type="finetune")
+    run = wandb.init(
+        project=os.environ["WANDB_PROJECT"],
+        entity=os.environ["WANDB_ENTITY"],
+        job_type="finetune",
+    )
     run.log_code()
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
@@ -482,8 +486,8 @@ def main():
 
     # add custom post-processing to the tokenizer
     tokenizer._tokenizer.post_processor = TemplateProcessing(
-        single="$A " + tokenizer.eos_token, # add eos at the end of each tweet
-        special_tokens=[(tokenizer.eos_token, 1)],
+        single="$A " + tokenizer.eos_token,  # add eos at the end of each tweet
+        special_tokens=[(tokenizer.eos_token, tokenizer.eos_token_id)],
     )
 
     if model_args.model_name_or_path:
