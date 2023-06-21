@@ -69,7 +69,7 @@ def main():
             for mode, nlls in results.items():
                 res_file = res_dir.joinpath(f"{mode}.npy")
                 with open(res_file, "wb") as f:
-                    np.save(f, nlls)
+                    np.save(f, nlls.numpy())
             # save arguments (mode will be the last set mode, eg. 'random')
             json.dump(prompting_args.__dict__, open(res_dir.joinpath("args.json"), "w"))
         except TokenizationError as e:
