@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 import torch
 from data import load_dataset
+from data.preprocessing import *
 from dotenv import load_dotenv
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
 from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
@@ -109,14 +110,20 @@ def _data_model_tokenizer(config: PromptingArguments):
     device = torch.device(config.device)
 
     # load data
-    data = load_dataset(
+    data = (
+        load_dataset(
         user_id=config.user_id,
         from_disk=config.from_disk,
         data_path=get_prompt_data_path(),
-    ).sort("created_at")
+        )
+        .sort("created_at")
+        .map(replace_special_characters)
+        .map(remove_urls)
+        .map(remove_extra_spaces)
+    )
 
     # load model
-    model = AutoModelForCausalLM.from_pretrained(config.model_id).to(device)
+    model = AutoModelForCausalLM.from_pretrained(config.model_id, use_safetensors=False).to(device)
 
     # load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(config.model_id)
