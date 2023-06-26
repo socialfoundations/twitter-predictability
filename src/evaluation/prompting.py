@@ -45,7 +45,7 @@ class PromptingArguments:
     )
 
     tokenizer_id: str = field(
-        default="gpt2", metadata={"help": "The tokenizer we use."}
+        default=None, metadata={"help": "The tokenizer we use. If None, then load tokenizer corresponding to model_id."}
     )
 
     ctxt_len: Optional[int] = field(
@@ -126,7 +126,10 @@ def _data_model_tokenizer(config: PromptingArguments):
     model = AutoModelForCausalLM.from_pretrained(config.model_id, use_safetensors=False).to(device)
 
     # load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(config.model_id)
+    if config.tokenizer_id is not None:
+        tokenizer = AutoTokenizer.from_pretrained(config.tokenizer_id)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(config.model_id)
     tokenizer.pad_token = tokenizer.eos_token
 
     return data, model, tokenizer
