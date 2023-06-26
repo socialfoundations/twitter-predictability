@@ -4,7 +4,7 @@ import re
 from datasets import Dataset, DatasetDict, load_from_disk
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from utils import get_prompt_data_path
+from utils import get_subject_data_path
 
 load_dotenv()
 
@@ -217,7 +217,7 @@ def load_from_database(db, user_id):
     return user_dataset
 
 
-def load_dataset(user_id, from_disk=True, data_path=get_prompt_data_path()):
+def load_dataset(user_id, from_disk=True, data_path=get_subject_data_path()):
     if from_disk:
         return load_from_disk(data_path.joinpath(user_id))
     else:

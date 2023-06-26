@@ -4,7 +4,7 @@ import datasets
 from data import load_dataset, DataLoadingException
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from utils import get_prompt_data_path
+from utils import get_subject_data_path
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
@@ -25,7 +25,7 @@ config = {
 
 # save dataset of single user onto disk
 def save_single_user_dataset(user_id):
-    user_data_path = get_prompt_data_path().joinpath(user_id)
+    user_data_path = get_subject_data_path().joinpath(user_id)
     if config["skip_if_exists"]:
         path_exists = os.path.exists(user_data_path)
         if path_exists and os.listdir(user_data_path):
@@ -33,7 +33,7 @@ def save_single_user_dataset(user_id):
 
     try:
         user_dataset = load_dataset(
-            user_id=user_id, from_disk=False, data_path=get_prompt_data_path()
+            user_id=user_id, from_disk=False, data_path=get_subject_data_path()
         )
         user_dataset.save_to_disk(user_data_path)
     except DataLoadingException as e:

@@ -9,7 +9,7 @@ from data.preprocessing import *
 from dotenv import load_dotenv
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
 from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
-from utils import get_prompt_data_path
+from utils import get_subject_data_path
 
 load_dotenv()
 
@@ -106,15 +106,16 @@ class PromptingArguments:
         if self.stride is None:
             self.stride = 40
 
+
 def _data_model_tokenizer(config: PromptingArguments):
     device = torch.device(config.device)
 
     # load data
     data = (
         load_dataset(
-        user_id=config.user_id,
-        from_disk=config.from_disk,
-        data_path=get_prompt_data_path(),
+            user_id=config.user_id,
+            from_disk=config.from_disk,
+            data_path=get_subject_data_path(),
         )
         .sort("created_at")
         .map(replace_special_characters)
@@ -123,7 +124,9 @@ def _data_model_tokenizer(config: PromptingArguments):
     )
 
     # load model
-    model = AutoModelForCausalLM.from_pretrained(config.model_id, use_safetensors=False).to(device)
+    model = AutoModelForCausalLM.from_pretrained(
+        config.model_id, use_safetensors=False
+    ).to(device)
 
     # load tokenizer
     if config.tokenizer_id is not None:
@@ -221,7 +224,9 @@ def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
     return res
 
 
-def _tokenized_tweets_context(mode, data, tokenizer, window_length, context_length, stride, seq_sep):
+def _tokenized_tweets_context(
+    mode, data, tokenizer, window_length, context_length, stride, seq_sep
+):
     tokenized_tweets = _tokenize_eval_data(
         data["eval"],
         tokenizer,
@@ -240,7 +245,7 @@ def _tokenized_tweets_context(mode, data, tokenizer, window_length, context_leng
             tweet_separator=seq_sep,
         )
         return tokenized_tweets, tokenized_context
-    
+
 
 def user_nlls(config: PromptingArguments):
     """
@@ -256,16 +261,15 @@ def user_nlls(config: PromptingArguments):
 
     window_length, context_length, stride = _window_context_stride(config, tokenizer)
 
-
     def get_nlls(mode):
         tokenized_tweets, tokenized_context = _tokenized_tweets_context(
-            mode, 
-            data, 
-            tokenizer=tokenizer, 
-            window_length=window_length, 
-            context_length=context_length, 
-            stride=stride, 
-            seq_sep=config.seq_sep
+            mode,
+            data,
+            tokenizer=tokenizer,
+            window_length=window_length,
+            context_length=context_length,
+            stride=stride,
+            seq_sep=config.seq_sep,
         )
 
         nlls = negative_log_likelihoods(
@@ -283,13 +287,12 @@ def user_nlls(config: PromptingArguments):
         nlls = torch.stack(nlls).cpu()
         return nlls
 
-    
     if config.mode == "all":
         results = {}
         for mode in ["none", "user", "peer", "random"]:
             nlls = get_nlls(mode)
             results[mode] = nlls
-    
+
         return results
     else:
         return get_nlls(config.mode)
@@ -310,8 +313,10 @@ def main():
     elif type(nlls) == dict:
         for mode in nlls.keys():
             print(f"### {mode} mode ###")
-            nll_mean, nll_err = torch_compute_confidence_interval(nlls[mode], confidence=0.9)
-    
+            nll_mean, nll_err = torch_compute_confidence_interval(
+                nlls[mode], confidence=0.9
+            )
+
             print(f"Negative log-likelihood (mean): {nll_mean:.4f} +/- {nll_err:.4f}")
             print(
                 f"Perplexity range: ({np.exp(nll_mean-nll_err):.4f}, {np.exp(nll_mean+nll_err):.4f})"

@@ -1,12 +1,12 @@
 import fire
 from pyprojroot import here
-from utils import get_prompt_data_path
+from utils import get_subject_data_path
 import os
 import shutil
 
 
 def chunk_subjects(N):
-    all_subjects = os.listdir(get_prompt_data_path())
+    all_subjects = os.listdir(get_subject_data_path())
 
     def chunks(l, n):
         """Yield n number of striped chunks from l."""

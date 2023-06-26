@@ -12,7 +12,7 @@ from prompting import (
 )
 from tqdm import tqdm
 from transformers import HfArgumentParser
-from utils import get_prompt_data_path, get_prompt_results_path
+from utils import get_subject_data_path, get_prompt_results_path
 
 load_dotenv()
 
@@ -38,7 +38,7 @@ def main():
 
     if script_args.subjects_file is None:
         # get all subjects
-        subjects = os.listdir(get_prompt_data_path())
+        subjects = os.listdir(get_subject_data_path())
     else:
 
         if os.path.exists(script_args.subjects_file):
