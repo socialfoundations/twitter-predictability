@@ -1,6 +1,6 @@
 import os
 
-from .dataloaders import (
+from .loaders import (
     SubjectDataLoaderFromDisk,
     PeerAdjustedSubjectDataLoader,
     TemporallyConsistentSubjectDataLoader,

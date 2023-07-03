@@ -1,7 +1,8 @@
 import os, logging
 
 import datasets
-from data import load_dataset, DataLoadingException
+from data import load_dataset
+from data.loaders import DataLoadingException
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from utils import get_subject_data_path
