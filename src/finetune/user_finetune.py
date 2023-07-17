@@ -277,7 +277,6 @@ def main():
     # Training
     if training_args.do_train:
         train_result = trainer.train()
-        trainer.save_model()  # Saves the tokenizer too for easy upload
 
         metrics = train_result.metrics
         metrics["train_samples"] = len(train_dataset)
