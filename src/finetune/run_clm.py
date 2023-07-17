@@ -39,7 +39,7 @@ import datasets
 import evaluate
 import torch
 import transformers
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 from transformers import (
     CONFIG_MAPPING,
     MODEL_FOR_CAUSAL_LM_MAPPING,
@@ -61,6 +61,9 @@ from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
 import wandb
+
+
+from user_data import load_eval, get_rand_users
 
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
@@ -241,6 +244,11 @@ class DataTrainingArguments:
     keep_linebreaks: bool = field(
         default=True,
         metadata={"help": "Whether to keep line breaks when using TXT files or not."},
+    )
+
+    do_rand_subjects_eval: bool = field(
+        default=False,
+        metadata={"help": "Whether to also run periodical evaluation (while training) on the eval set of 100 random subjects. Don't forget to set --metric_for_best_model and --greater_is_better to the desired values."},
     )
 
     def __post_init__(self):
@@ -436,6 +444,26 @@ def main():
                 **dataset_args,
             )
 
+    if data_args.do_rand_subjects_eval:
+        # remove '_id' column because subject data don't have them
+        raw_datasets["train"] = raw_datasets["train"].remove_columns("_id")
+        raw_datasets["validation"] = raw_datasets["validation"].remove_columns("_id")
+        # add subject eval datasets
+        if training_args.do_eval:
+            rand_users = get_rand_users(N=100)
+            if not os.path.exists(training_args.output_dir):
+                os.mkdir(training_args.output_dir)
+            fpath = os.path.join(training_args.output_dir, "rand_subjects.txt")
+            with open(fpath, 'w') as f:
+                for line in rand_users:
+                    f.write(f"{line}\n")
+            dsets = []
+            for user in rand_users:
+                dset = load_eval(user)
+                features_to_remove = [f for f in dset.features if f != "text"]
+                dsets.append(dset.remove_columns(features_to_remove))
+            raw_datasets["rand_subjects"] = concatenate_datasets(dsets)
+
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.html.
 
@@ -484,12 +512,6 @@ def main():
             "You can do it from another script, save it, and load it from here, using --tokenizer_name."
         )
 
-    # add custom post-processing to the tokenizer
-    tokenizer._tokenizer.post_processor = TemplateProcessing(
-        single="$A " + tokenizer.eos_token,  # add eos at the end of each tweet
-        special_tokens=[(tokenizer.eos_token, tokenizer.eos_token_id)],
-    )
-
     if model_args.model_name_or_path:
         torch_dtype = (
             model_args.torch_dtype
@@ -521,11 +543,13 @@ def main():
 
     # Preprocessing the datasets.
     def preprocessing_steps(examples):
-        return preproc.remove_extra_spaces_batch(
-            preproc.remove_urls_batch(
-                preproc.replace_special_characters_batch(examples)
+        return preproc.end_with_eos_batch(
+                preproc.remove_extra_spaces_batch(
+                    preproc.remove_urls_batch(
+                        preproc.replace_special_characters_batch(examples)
+                    )
+                )
             )
-        )
 
     with training_args.main_process_first(desc="preprocess dataset"):
         if not data_args.streaming:
@@ -653,6 +677,10 @@ def main():
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(max_eval_samples))
+        if "rand_subjects" in lm_datasets:
+            eval_datasets = {"base": eval_dataset, "rand_subjects": lm_datasets["rand_subjects"]}
+        else:
+            eval_datasets = eval_dataset
 
         def preprocess_logits_for_metrics(logits, labels):
             if isinstance(logits, tuple):
@@ -676,7 +704,7 @@ def main():
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
-        eval_dataset=eval_dataset if training_args.do_eval else None,
+		eval_dataset=eval_datasets if training_args.do_eval else None,
         tokenizer=tokenizer,
         # Data collator will default to DataCollatorWithPadding, so we change it.
         data_collator=default_data_collator,
@@ -715,7 +743,7 @@ def main():
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
 
-        metrics = trainer.evaluate()
+        metrics = trainer.evaluate(eval_dataset)
 
         max_eval_samples = (
             data_args.max_eval_samples

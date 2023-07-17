@@ -37,3 +37,12 @@ def replace_special_characters_batch(examples):
     for e in examples["text"]:
         res.append(replace_special_characters(e))
     return {"text": res}
+
+def end_with_eos(x):
+    return x + '<endoftext>'
+
+def end_with_eos_batch(examples):
+    res = []
+    for e in examples["text"]:
+        res.append(end_with_eos(e))
+    return {"text": res}
