@@ -34,7 +34,10 @@ def save_single_user_dataset(user_id):
 
     try:
         user_dataset = load_dataset(
-            user_id=user_id, from_disk=False, data_path=get_subject_data_path()
+            user_id=user_id,
+            from_disk=False,
+            data_path=get_subject_data_path(),
+            control="multi",
         )
         user_dataset.save_to_disk(user_data_path)
     except DataLoadingException as e:
