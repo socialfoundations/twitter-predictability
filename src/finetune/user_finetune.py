@@ -182,39 +182,39 @@ def main():
         remove_columns=column_names,
     )
 
-    # block_size = tokenizer.model_max_length
+    block_size = tokenizer.model_max_length
 
-    # # Main data processing function that will concatenate all texts from our dataset and generate chunks of block_size.
-    # def group_texts(examples):
-    #     # Concatenate all texts.
-    #     concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
-    #     total_length = len(concatenated_examples[list(examples.keys())[0]])
-    #     # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
-    #     # customize this part to your needs.
-    #     if total_length >= block_size:
-    #         total_length = (total_length // block_size) * block_size
-    #     # Split by chunks of max_len.
-    #     result = {
-    #         k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
-    #         for k, t in concatenated_examples.items()
-    #     }
-    #     result["labels"] = result["input_ids"].copy()
-    #     return result
+    # Main data processing function that will concatenate all texts from our dataset and generate chunks of block_size.
+    def group_texts(examples):
+        # Concatenate all texts.
+        concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
+        total_length = len(concatenated_examples[list(examples.keys())[0]])
+        # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
+        # customize this part to your needs.
+        if total_length >= block_size:
+            total_length = (total_length // block_size) * block_size
+        # Split by chunks of max_len.
+        result = {
+            k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
+            for k, t in concatenated_examples.items()
+        }
+        result["labels"] = result["input_ids"].copy()
+        return result
 
-    # lm_datasets = tokenized_datasets.map(
-    #     group_texts,
-    #     batched=True,
-    # )
+    lm_datasets = tokenized_datasets.map(
+        group_texts,
+        batched=True,
+    )
 
     if training_args.do_train:
-        if "train" not in tokenized_datasets:
+        if "train" not in lm_datasets:
             raise ValueError("--do_train requires a train dataset")
-        train_dataset = tokenized_datasets["train"]
+        train_dataset = lm_datasets["train"]
 
     if training_args.do_eval:
-        if "validation" not in tokenized_datasets:
+        if "validation" not in lm_datasets:
             raise ValueError("--do_eval requires a validation dataset")
-        eval_dataset = tokenized_datasets["validation"]
+        eval_dataset = lm_datasets["validation"]
 
         def preprocess_logits_for_metrics(logits, labels):
             if isinstance(logits, tuple):
