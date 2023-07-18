@@ -23,6 +23,7 @@ from transformers import (
     set_seed,
 )
 from utils import get_subject_data_path, get_subject_models_path
+from my_trainer import NoShuffleTrainer
 
 import wandb
 
@@ -70,6 +71,13 @@ class DataArguments:
         },
     )
 
+    no_shuffle: bool = field(
+        default=False,
+        metadata={
+            "help": "Whether or not to shuffle temporally ordered batches of tweets while training."
+        },
+    )
+
 
 @dataclass
 class RunArguments:
@@ -92,7 +100,7 @@ def _load_dataset(data_args: DataArguments):
         }
     )
 
-    return data
+    return data.sort("created_at", reverse=True)  # from oldest to newest
 
 
 def _load_model_tokenizer(model_args: ModelArguments):
@@ -260,7 +268,13 @@ def main():
             return metric.compute(predictions=preds, references=labels)
 
     # Initialize our Trainer
-    trainer = Trainer(
+    if data_args.no_shuffle:
+        logger.info("Using NoShuffleTrainer...")
+        Trainerclass = NoShuffleTrainer
+    else:
+        logger.info("Using Trainer...")
+        Trainerclass = Trainer
+    trainer = Trainerclass(
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
