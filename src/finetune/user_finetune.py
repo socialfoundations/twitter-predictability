@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import logging
 import math
 import os
@@ -10,7 +13,6 @@ import datasets
 import evaluate
 import transformers
 from datasets import Dataset, DatasetDict, concatenate_datasets, load_from_disk
-from dotenv import load_dotenv
 from my_trainer import NoShuffleTrainer
 from preprocessing import *
 from transformers import (
@@ -27,7 +29,6 @@ from utils import get_subject_data_path, get_subject_models_path
 
 import wandb
 
-load_dotenv()
 logger = logging.getLogger(__name__)
 
 
@@ -143,6 +144,7 @@ def _load_dataset(data_args: DataArguments):
 
 
 def _load_model_tokenizer(model_args: ModelArguments):
+    
     if model_args.tokenizer_name:
         tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name)
     elif model_args.model_name_or_path:
@@ -152,7 +154,7 @@ def _load_model_tokenizer(model_args: ModelArguments):
 
     config = AutoConfig.from_pretrained(model_args.model_name_or_path)
     model = AutoModelForCausalLM.from_pretrained(
-        model_args.model_name_or_path, config=config
+        model_args.model_name_or_path, config=config, use_safetensors=False
     )
 
     return tokenizer, model
