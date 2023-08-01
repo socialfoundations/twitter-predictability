@@ -4,13 +4,14 @@ import os
 import sys
 from dataclasses import dataclass, field
 from itertools import chain
-from typing import Optional
+from typing import List, Optional
 
 import datasets
 import evaluate
 import transformers
-from datasets import DatasetDict, load_from_disk
+from datasets import Dataset, DatasetDict, concatenate_datasets, load_from_disk
 from dotenv import load_dotenv
+from my_trainer import NoShuffleTrainer
 from preprocessing import *
 from transformers import (
     AutoConfig,
@@ -23,7 +24,6 @@ from transformers import (
     set_seed,
 )
 from utils import get_subject_data_path, get_subject_models_path
-from my_trainer import NoShuffleTrainer
 
 import wandb
 
@@ -52,8 +52,8 @@ class DataArguments:
         metadata={"help": "Id of the subject whose data we want to finetune on."}
     )
 
-    finetune_on: str = field(
-        default="user",
+    finetune_on: List[str] = field(
+        default_factory=lambda: ["user"],
         metadata={
             "help": "What type of data to use to fine-tune on. Can be one of the following values: 'user', 'peer', 'random'.",
             "choices": ["user", "peer", "random"],
@@ -89,14 +89,53 @@ class RunArguments:
     )
 
 
+def _dset_with_removed_cols(dset: Dataset, exceptions=[]):
+    cols_to_remove = dset.column_names
+    for e in exceptions:
+        cols_to_remove.remove(e)
+
+    return dset.remove_columns(cols_to_remove)
+
+
 def _load_dataset(data_args: DataArguments):
     subject_data_location = get_subject_data_path().joinpath(data_args.subject_id)
     data = load_from_disk(subject_data_location)
 
+    column_exceptions = ["text", "created_at", "author_id"]
+
+    # construct train_data
+    train_data = None
+    if len(data_args.finetune_on) == 1:
+        dset = data[data_args.finetune_on[0] + "_context"]
+        train_data = _dset_with_removed_cols(dset, exceptions=column_exceptions)
+    else:
+        max_samples = 250
+        n_sources = len(data_args.finetune_on)
+        samples_per_source = math.ceil(max_samples / n_sources)
+        datasets = []
+        for source in data_args.finetune_on:
+            dset = (
+                data[source + "_context"]
+                .sort("created_at")
+                .select(range(samples_per_source))
+            )
+
+            dset = _dset_with_removed_cols(dset, exceptions=column_exceptions)
+
+            datasets.append(dset)
+
+        train_data = (
+            concatenate_datasets(datasets).sort("created_at").select(range(max_samples))
+        )
+
+    validation_data = _dset_with_removed_cols(
+        data["eval"], exceptions=column_exceptions
+    )
+
     data = DatasetDict(
         {
-            "train": data[data_args.finetune_on + "_context"],
-            "validation": data["eval"],
+            "train": train_data,
+            "validation": validation_data,
         }
     )
 
@@ -130,13 +169,19 @@ def main():
         training_args,
     ) = parser.parse_args_into_dataclasses()
 
+    def finetuned_on_str():
+        sources = data_args.finetune_on
+        sources.sort()
+        return "+".join(sources)
+
     run = wandb.init(
         project=os.environ["WANDB_PROJECT"],
         entity=os.environ["WANDB_ENTITY"],
         job_type="user finetune",
-        tags=[data_args.finetune_on],
+        tags=[finetuned_on_str(), "debug"],
     )
     run.log_code()
+    run.config.update(data_args)
 
     # Setup logging
     logging.basicConfig(
@@ -164,7 +209,7 @@ def main():
         training_args.output_dir = get_subject_models_path().joinpath(
             model_args.model_name_or_path.split("/")[-1],  # name of the base model
             data_args.subject_id,  # subject id
-            data_args.finetune_on,  # finetuned on 'user', 'peer' or 'random' tweets
+            finetuned_on_str(),  # finetuned on 'user', 'peer' or 'random' tweets - or a combination of those
         )
         logger.info(f"New output dir: {training_args.output_dir}")
 
@@ -183,22 +228,18 @@ def main():
         batched=True,
     )
 
-    if training_args.do_train:
-        column_names = list(prepocessed_datasets["train"].features)
-    else:
-        column_names = list(prepocessed_datasets["validation"].features)
     text_column_name = "text"
 
     tokenizer, model = _load_model_tokenizer(model_args)
 
     def tokenize_function(examples):
-        output = tokenizer(examples[text_column_name], padding="longest")
+        output = tokenizer(examples[text_column_name])
         return output
 
     tokenized_datasets = prepocessed_datasets.map(
         tokenize_function,
         batched=True,
-        remove_columns=column_names,
+        remove_columns=["created_at", "author_id", "text"],
     )
 
     if data_args.block_size is None:
