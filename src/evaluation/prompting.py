@@ -45,7 +45,10 @@ class PromptingArguments:
     )
 
     tokenizer_id: str = field(
-        default=None, metadata={"help": "The tokenizer we use. If None, then load tokenizer corresponding to model_id."}
+        default=None,
+        metadata={
+            "help": "The tokenizer we use. If None, then load tokenizer corresponding to model_id."
+        },
     )
 
     ctxt_len: Optional[int] = field(
@@ -65,7 +68,7 @@ class PromptingArguments:
     stride: Optional[int] = field(
         default=None,
         metadata={
-            "help": "Stride strategy when sliding over the evaluation sequence. If None then stride will be half the window length."
+            "help": "Stride strategy when sliding over the evaluation sequence. If None then stride will be half the window length. It is the size of the overlapping chunks."
         },
     )
 
@@ -102,9 +105,6 @@ class PromptingArguments:
                 f"Context length is 0, while mode of running is context={self.mode}. Overriding it to 'none'."
             )
             self.mode = "none"
-
-        if self.stride is None:
-            self.stride = 40
 
 
 def _data_model_tokenizer(config: PromptingArguments):
@@ -279,7 +279,7 @@ def user_nlls(config: PromptingArguments):
             text=tokenized_tweets,
             context=tokenized_context,
             last_ctxt_token=torch.tensor(tokenizer.encode(config.seq_sep)),
-            overlap_len=window_length - stride,
+            overlap_len=stride,
             device=torch.device(config.device),
             token_level=config.token_level_nlls,
         )
