@@ -7,8 +7,7 @@ from dotenv import load_dotenv
 from prompting import (
     PromptingArguments,
     TokenizationError,
-    user_nlls,
-    all_modes_user_nlls,
+    user_nlls
 )
 from tqdm import tqdm
 from transformers import HfArgumentParser
@@ -33,12 +32,14 @@ def main():
     )
     (prompting_args, script_args) = parser.parse_args_into_dataclasses()
 
+    is_multi_control = prompting_args.mode in ["random_tweet", "random_user", "multi_control"]
+
     model_name = prompting_args.model_id.split("/")[-1]
     print(f"Running evaluation on {model_name}")
 
     if script_args.subjects_file is None:
         # get all subjects
-        subjects = os.listdir(get_subject_data_path())
+        subjects = os.listdir(get_subject_data_path(multi_control=is_multi_control))
     else:
 
         if os.path.exists(script_args.subjects_file):
@@ -46,8 +47,6 @@ def main():
                 subjects = f.read().splitlines()
         else:
             raise RuntimeError(f"{script_args.subjects_file} doesn't exist.")
-
-    modes = ["none", "user", "peer", "random"]
 
     for s_id in tqdm(subjects, desc="subject", position=0):
         if script_args.skip_if_exists:
@@ -60,7 +59,7 @@ def main():
         prompting_args.user_id = s_id
         try:
             # collect nlls for each mode
-            results = all_modes_user_nlls(prompting_args)
+            results = user_nlls(prompting_args)
 
             # save results
             res_dir = get_prompt_results_path().joinpath(model_name).joinpath(s_id)

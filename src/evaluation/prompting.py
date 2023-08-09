@@ -76,7 +76,7 @@ class PromptingArguments:
         default="none",
         metadata={
             "help": "Execution mode. Determines what type of context should be used. If 'all', then it runs all evaluation modes.",
-            "choices": ["none", "user", "peer", "random", "all"],
+            "choices": ["none", "user", "peer", "random", "random_tweet", "random_user", "all", "multi_control"],
         },
     )
 
@@ -110,12 +110,14 @@ class PromptingArguments:
 def _data_model_tokenizer(config: PromptingArguments):
     device = torch.device(config.device)
 
+    is_multi_control = config.mode in ["random_tweet", "random_user", "multi_control"]
+
     # load data
     data = (
         load_dataset(
             user_id=config.user_id,
             from_disk=config.from_disk,
-            data_path=get_subject_data_path(),
+            data_path=get_subject_data_path(multi_control=is_multi_control),
         )
         .sort("created_at")
         .map(replace_special_characters)
@@ -238,12 +240,16 @@ def _tokenized_tweets_context(
     if mode == "none":
         return tokenized_tweets, None
     else:
-        tokenized_context = _tokenize_context(
-            tokenizer,
-            data[mode + "_context"],
-            context_length,
-            tweet_separator=seq_sep,
-        )
+        split = mode + "_context"
+        if split in data.keys():
+            tokenized_context = _tokenize_context(
+                tokenizer,
+                data[mode + "_context"],
+                context_length,
+                tweet_separator=seq_sep,
+            )
+        else:
+            raise ValueError(f"{split} is not a valid split in the subject's dataset. Available splits: {data.keys()}")
         return tokenized_tweets, tokenized_context
 
 
@@ -255,7 +261,11 @@ def user_nlls(config: PromptingArguments):
         config (PromptingArguments): Arguments for prompting.
 
     Returns:
-        dict | torch.Tensor: If mode is 'all', returns a dictionary of tensors. The arrays contain token nlls for all of the following modes: ['none', 'user', 'peer', 'random'].
+        dict | torch.Tensor: If mode is 'all', or 'multi_control' returns a dictionary of tensors. 
+        In case of 'all':
+            The arrays contain token nlls for all of the following modes: ['none', 'user', 'peer', 'random'].
+        In case of 'multi_control':
+            The arrays contain token nlls for all of the following modes: ['none', 'user', 'peer', 'random_tweet', 'random_user'].
     """
     data, model, tokenizer = _data_model_tokenizer(config)
 
@@ -290,6 +300,13 @@ def user_nlls(config: PromptingArguments):
     if config.mode == "all":
         results = {}
         for mode in ["none", "user", "peer", "random"]:
+            nlls = get_nlls(mode)
+            results[mode] = nlls
+
+        return results
+    elif config.mode == "multi_control":
+        results = {}
+        for mode in ["none", "user", "peer",  "random_tweet", "random_user"]:
             nlls = get_nlls(mode)
             results[mode] = nlls
 
