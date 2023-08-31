@@ -106,6 +106,11 @@ class PromptingArguments:
             )
             self.mode = "none"
 
+        if self.seq_sep == "space":
+            self.seq_sep = " "
+        elif self.seq_sep == "newline":
+            self.seq_sep = "\n"
+
 
 def _data_model_tokenizer(config: PromptingArguments):
     device = torch.device(config.device)
@@ -135,7 +140,9 @@ def _data_model_tokenizer(config: PromptingArguments):
         tokenizer = AutoTokenizer.from_pretrained(config.tokenizer_id)
     else:
         tokenizer = AutoTokenizer.from_pretrained(config.model_id)
-    tokenizer.pad_token = tokenizer.eos_token
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    print(f"Tokenizer\n\t- pad token: {tokenizer.pad_token} (id: {tokenizer.pad_token_id})\n\t- bos token: {tokenizer.bos_token} (id: {tokenizer.bos_token_id})\n\t- eos token: {tokenizer.eos_token} (id: {tokenizer.eos_token_id})")
 
     return data, model, tokenizer
 
@@ -170,6 +177,8 @@ def _window_context_stride(config: PromptingArguments, tokenizer):
         assert config.stride > 0
         stride = config.stride
 
+    print(f"Window length: {window_length}\nContext length: {context_length}\nStride: {stride}")
+
     return window_length, context_length, stride
 
 
@@ -180,6 +189,9 @@ def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep, mode):
         # even when there is no context preceding the first eval token
         tweets = tokenizer.bos_token + tweets
 
+    tokens_in_eval = len(tokenizer(tweets)['input_ids'])
+    print(f"Eval total length: {tokens_in_eval} tokens / {len(tweets.split())} words / {len(data['text'])} tweets.")
+    
     tokenized_tweets = tokenizer(
         tweets,
         return_overflowing_tokens=True,  # sliding window
@@ -188,7 +200,10 @@ def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep, mode):
         truncation=True,
         padding=True,
         return_tensors="pt",
+        add_special_tokens=False,
     )
+    print(f"Tokenized evaluation data shape (n x window_len): {tokenized_tweets['input_ids'].shape}")
+    
     return tokenized_tweets
 
 
@@ -198,6 +213,10 @@ class TokenizationError(RuntimeError):
 
 def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
     context = tweet_separator.join(context_dataset["text"])
+
+    tokens_in_ctxt = len(tokenizer(context)['input_ids'])
+    print(f"Context total length: {tokens_in_ctxt} tokens / {len(context.split())} words / {len(context_dataset['text'])} tweets.")
+    
     tokenizer.truncation_side = (
         "left"  # change to "left" to discard "oldest" context tweets
     )
@@ -208,6 +227,7 @@ def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
         max_length=context_len,
         padding="max_length",  # pad up to max_length
         return_tensors="pt",
+        add_special_tokens=False,
     )
 
     # un-batch result
@@ -271,6 +291,9 @@ def user_nlls(config: PromptingArguments):
 
     window_length, context_length, stride = _window_context_stride(config, tokenizer)
 
+    seq_sep_token = torch.tensor(tokenizer.encode(config.seq_sep, add_special_tokens=False))
+    print(f"Sequence separator: '{config.seq_sep}' / Encoded: {seq_sep_token}")
+
     def get_nlls(mode):
         tokenized_tweets, tokenized_context = _tokenized_tweets_context(
             mode,
@@ -288,13 +311,14 @@ def user_nlls(config: PromptingArguments):
             model=model,
             text=tokenized_tweets,
             context=tokenized_context,
-            last_ctxt_token=torch.tensor(tokenizer.encode(config.seq_sep)),
+            last_ctxt_token=seq_sep_token,
             overlap_len=stride,
             device=torch.device(config.device),
             token_level=config.token_level_nlls,
         )
 
         nlls = torch.stack(nlls).cpu()
+        print(f"NLLs shape: {nlls.shape}")
         return nlls
 
     if config.mode == "all":

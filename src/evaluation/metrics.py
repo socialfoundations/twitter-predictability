@@ -54,7 +54,8 @@ def _batched_negative_log_likelihoods(
         num_sequences = text["input_ids"].shape[0]
         # concatenate tensors
         context_ids = context["input_ids"]
-        context_ids[context_len - 1] = last_ctxt_token
+        if last_ctxt_token is not None:
+            context_ids[context_len - 1] = last_ctxt_token
         input_ids = torch.cat(
             (context_ids.repeat(num_sequences, 1), text["input_ids"]), dim=-1
         )
