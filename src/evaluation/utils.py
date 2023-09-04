@@ -1,13 +1,15 @@
 from pyprojroot import here
 from pathlib import Path
 
+base_path = here()
+
 
 def get_subject_data_path(multi_control=False) -> Path:
     if multi_control:
-        return here().joinpath("out", "subject_data_m")
+        return base_path.joinpath("out", "data", "subject_data_m")
     else:
-        return here().joinpath("out", "subject_data")
+        return base_path.joinpath("out", "data", "subject_data")
 
 
 def get_prompt_results_path() -> Path:
-    return here().joinpath("out", "evaluation", "prompt")
+    return base_path.joinpath("out", "evaluation", "prompt")
