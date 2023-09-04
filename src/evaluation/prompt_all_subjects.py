@@ -55,7 +55,11 @@ def main():
     logger.info(f"Running evaluation on {model_name}")
 
     # preload model once into memory, instead of every time we call user_nlls(...)
-    model = load_model(device=prompting_args.device, model_id=prompting_args.model_id)
+    model = load_model(
+        device=prompting_args.device,
+        model_id=prompting_args.model_id,
+        offload_folder=prompting_args.offload_folder,
+    )
     tokenizer_id = (
         prompting_args.tokenizer_id
         if prompting_args.tokenizer_id is not None

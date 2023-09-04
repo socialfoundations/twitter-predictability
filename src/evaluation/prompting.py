@@ -114,6 +114,14 @@ class PromptingArguments:
         },
     )
 
+    # more on loading large models: https://huggingface.co/blog/accelerate-large-models
+    offload_folder: Optional[str] = field(
+        default="offload",
+        metadata={
+            "help": "Specifies offload folder for model weights. Useful when trying to load a large model that doesn't fit into memory."
+        },
+    )
+
     def __post_init__(self):
         if self.ctxt_len == 0 and self.mode != "none":
             logger.warning(
@@ -149,11 +157,13 @@ def load_data(mode: str, user_id: str, from_disk: bool):
     return data
 
 
-def load_model(device: str, model_id: str):
+def load_model(device: str, model_id: str, offload_folder: str):
     device = torch.device(device)
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         use_safetensors=False,
+        device_map="auto",
+        offload_folder=offload_folder,
     ).to(device)
     return model
 
@@ -176,7 +186,11 @@ def _data_model_tokenizer(config: PromptingArguments):
     )
 
     # load model
-    model = load_model(device=config.device, model_id=config.model_id)
+    model = load_model(
+        device=config.device,
+        model_id=config.model_id,
+        offload_folder=config.offload_folder,
+    )
 
     # load tokenizer
     tokenizer_id = (
