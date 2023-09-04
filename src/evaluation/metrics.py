@@ -3,6 +3,7 @@ import torch
 from datasets import Dataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import numpy as np
 
 
 # From https://discuss.pytorch.org/t/what-is-the-proper-way-to-compute-95-confidence-intervals-with-pytorch-for-classification-and-regression/139398/2
@@ -169,3 +170,34 @@ def negative_log_likelihoods(batched, batch_size=2, **kwargs):
         return _batched_negative_log_likelihoods(batch_size=batch_size, **kwargs)
     else:
         return _non_batched_negative_log_likelihoods(**kwargs)
+
+
+def predictability(hx, z):
+    """
+    Calculates the upper bound on prediction accuracy (or predictability Π) given Fano's inequality by finding the largest Π that satisfies it.
+
+    Args:
+        hx (_type_): Conditional entropy. Uncertainty of our model / hypothesis.
+        z (_type_): The cardinality of the text.
+    """
+
+    p_list = np.linspace(0, 1, 101)
+
+    predictability = p_list[0]
+
+    def fano(p, h, z):
+        # binary entropy with p
+        if p == 0 or p == 1:
+            h_p = 0
+        else:
+            h_p = -p * np.log(p) - (1 - p) * np.log(1 - p)
+
+        return h < h_p + (1 - p) * np.log(z - 1)
+
+    for p in p_list:
+        if not fano(p, hx, z):
+            break
+        else:
+            predictability = p
+
+    return predictability
