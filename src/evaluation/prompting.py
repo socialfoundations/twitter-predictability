@@ -100,15 +100,15 @@ class PromptingArguments:
     )
 
     batched: bool = field(
-        default=True, metadata={"help": "Whether to use batched execution."}
+        default=False, metadata={"help": "Whether to use batched execution."}
     )
 
     batch_size: Optional[int] = field(
-        default=2, metadata={"help": "Batch size if batched execution is selected."}
+        default=None, metadata={"help": "Batch size if batched execution is selected."}
     )
 
     token_level_nlls: bool = field(
-        default=True,
+        default=False,
         metadata={
             "help": "Should negative-log-likelihoods be calculated per-token, or per input sequence. The latter gives back an average nll over tokens in that sequence."
         },
@@ -116,7 +116,7 @@ class PromptingArguments:
 
     def __post_init__(self):
         if self.ctxt_len == 0 and self.mode != "none":
-            warnings.warn(
+            logger.warning(
                 f"Context length is 0, while mode of running is context={self.mode}. Overriding it to 'none'."
             )
             self.mode = "none"
@@ -125,6 +125,12 @@ class PromptingArguments:
             self.seq_sep = " "
         elif self.seq_sep == "newline":
             self.seq_sep = "\n"
+
+        if self.batch_size is not None and not self.batched:
+            logger.warning(
+                f"Batch size is set, while --batched is not. Overriding --batched to True."
+            )
+            self.batched = True
 
 
 def _data_model_tokenizer(config: PromptingArguments):
@@ -374,7 +380,7 @@ def main():
     parser = HfArgumentParser(PromptingArguments)
     parser.add_argument(
         "--debug",
-        default=False,
+        action="store_true",
         help="When set, it changes the logging level to debug.",
     )
     (config, args) = parser.parse_args_into_dataclasses()

@@ -27,12 +27,12 @@ def main():
     )
     parser.add_argument(
         "--skip_if_exists",
-        default=True,
+        action="store_true",
         help="Skip subjects that already have a directory with results.",
     )
     parser.add_argument(
         "--debug",
-        default=False,
+        action="store_true",
         help="When set, it changes the logging level to debug.",
     )
     (prompting_args, script_args) = parser.parse_args_into_dataclasses()
