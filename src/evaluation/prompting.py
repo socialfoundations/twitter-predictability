@@ -1,3 +1,4 @@
+import logging
 import warnings
 from dataclasses import dataclass, field
 from typing import Optional
@@ -12,6 +13,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 from utils import get_subject_data_path
 
 load_dotenv()
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARNING
+)
+logger = logging.getLogger("prompting")
 
 
 @dataclass
@@ -76,7 +82,16 @@ class PromptingArguments:
         default="none",
         metadata={
             "help": "Execution mode. Determines what type of context should be used. If 'all', then it runs all evaluation modes.",
-            "choices": ["none", "user", "peer", "random", "random_tweet", "random_user", "all", "multi_control"],
+            "choices": [
+                "none",
+                "user",
+                "peer",
+                "random",
+                "random_tweet",
+                "random_user",
+                "all",
+                "multi_control",
+            ],
         },
     )
 
@@ -142,7 +157,9 @@ def _data_model_tokenizer(config: PromptingArguments):
         tokenizer = AutoTokenizer.from_pretrained(config.model_id)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    print(f"Tokenizer\n\t- pad token: {tokenizer.pad_token} (id: {tokenizer.pad_token_id})\n\t- bos token: {tokenizer.bos_token} (id: {tokenizer.bos_token_id})\n\t- eos token: {tokenizer.eos_token} (id: {tokenizer.eos_token_id})")
+    logger.debug(
+        f"Tokenizer\n\t- pad token: {tokenizer.pad_token} (id: {tokenizer.pad_token_id})\n\t- bos token: {tokenizer.bos_token} (id: {tokenizer.bos_token_id})\n\t- eos token: {tokenizer.eos_token} (id: {tokenizer.eos_token_id})"
+    )
 
     return data, model, tokenizer
 
@@ -177,7 +194,9 @@ def _window_context_stride(config: PromptingArguments, tokenizer):
         assert config.stride >= 0
         stride = config.stride
 
-    print(f"Window length: {window_length}\nContext length: {context_length}\nStride: {stride}")
+    logger.debug(
+        f"Window length: {window_length}\nContext length: {context_length}\nStride: {stride}"
+    )
 
     return window_length, context_length, stride
 
@@ -188,6 +207,11 @@ def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep, mode):
         # this ensures we get the probability for generating the first token P(t_1|BOS)
         # even when there is no context preceding the first eval token
         tweets = tokenizer.bos_token + tweets
+
+    tokens_in_eval = len(tokenizer(tweets)["input_ids"])
+    logger.debug(
+        f"Eval total length: {tokens_in_eval} tokens / {len(tweets.split())} words / {len(data['text'])} tweets."
+    )
 
     tokenizer.truncation_side = "right"
     tokenizer.padding_side = "right"
@@ -201,8 +225,10 @@ def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep, mode):
         return_tensors="pt",
         add_special_tokens=False,
     )
-    print(f"Tokenized evaluation data shape (n x window_len): {tokenized_tweets['input_ids'].shape}")
-    
+    logger.debug(
+        f"Tokenized evaluation data shape (n x window_len): {tokenized_tweets['input_ids'].shape}"
+    )
+
     return tokenized_tweets
 
 
@@ -213,9 +239,11 @@ class TokenizationError(RuntimeError):
 def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
     context = tweet_separator.join(context_dataset["text"])
 
-    tokens_in_ctxt = len(tokenizer(context)['input_ids'])
-    print(f"Context total length: {tokens_in_ctxt} tokens / {len(context.split())} words / {len(context_dataset['text'])} tweets.")
-    
+    tokens_in_ctxt = len(tokenizer(context)["input_ids"])
+    logger.debug(
+        f"Context total length: {tokens_in_ctxt} tokens / {len(context.split())} words / {len(context_dataset['text'])} tweets."
+    )
+
     tokenizer.truncation_side = (
         "left"  # change to "left" to discard "oldest" context tweets
     )
@@ -268,7 +296,9 @@ def _tokenized_tweets_context(
                 tweet_separator=seq_sep,
             )
         else:
-            raise ValueError(f"{split} is not a valid split in the subject's dataset. Available splits: {data.keys()}")
+            raise ValueError(
+                f"{split} is not a valid split in the subject's dataset. Available splits: {data.keys()}"
+            )
         return tokenized_tweets, tokenized_context
 
 
@@ -280,7 +310,7 @@ def user_nlls(config: PromptingArguments):
         config (PromptingArguments): Arguments for prompting.
 
     Returns:
-        dict | torch.Tensor: If mode is 'all', or 'multi_control' returns a dictionary of tensors. 
+        dict | torch.Tensor: If mode is 'all', or 'multi_control' returns a dictionary of tensors.
         In case of 'all':
             The arrays contain token nlls for all of the following modes: ['none', 'user', 'peer', 'random'].
         In case of 'multi_control':
@@ -290,8 +320,10 @@ def user_nlls(config: PromptingArguments):
 
     window_length, context_length, stride = _window_context_stride(config, tokenizer)
 
-    seq_sep_token = torch.tensor(tokenizer.encode(config.seq_sep, add_special_tokens=False))
-    print(f"Sequence separator: '{config.seq_sep}' / Encoded: {seq_sep_token}")
+    seq_sep_token = torch.tensor(
+        tokenizer.encode(config.seq_sep, add_special_tokens=False)
+    )
+    logger.debug(f"Sequence separator: '{config.seq_sep}' / Encoded: {seq_sep_token}")
 
     def get_nlls(mode):
         tokenized_tweets, tokenized_context = _tokenized_tweets_context(
@@ -317,7 +349,7 @@ def user_nlls(config: PromptingArguments):
         )
 
         nlls = torch.stack(nlls).cpu()
-        print(f"NLLs shape: {nlls.shape}")
+        logger.debug(f"NLLs shape: {nlls.shape}")
         return nlls
 
     if config.mode == "all":
@@ -329,7 +361,7 @@ def user_nlls(config: PromptingArguments):
         return results
     elif config.mode == "multi_control":
         results = {}
-        for mode in ["none", "user", "peer",  "random_tweet", "random_user"]:
+        for mode in ["none", "user", "peer", "random_tweet", "random_user"]:
             nlls = get_nlls(mode)
             results[mode] = nlls
 
@@ -340,7 +372,14 @@ def user_nlls(config: PromptingArguments):
 
 def main():
     parser = HfArgumentParser(PromptingArguments)
-    (config,) = parser.parse_args_into_dataclasses()
+    parser.add_argument(
+        "--debug",
+        default=False,
+        help="When set, it changes the logging level to debug.",
+    )
+    (config, args) = parser.parse_args_into_dataclasses()
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
     nlls = user_nlls(config=config)
 
     if type(nlls) == torch.Tensor:
