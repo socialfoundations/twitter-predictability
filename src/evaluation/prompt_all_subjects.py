@@ -4,18 +4,18 @@ import os
 
 import numpy as np
 from dotenv import load_dotenv
-from prompting import (
-    PromptingArguments,
-    TokenizationError,
-    user_nlls
-)
+import torch
+from prompting import PromptingArguments, TokenizationError, user_nlls
 from tqdm import tqdm
 from transformers import HfArgumentParser
 from utils import get_subject_data_path, get_prompt_results_path
 
 load_dotenv()
 
-main_logger = logging.getLogger("main")
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARNING
+)
+logger = logging.getLogger("prompting")
 
 
 def main():
@@ -30,9 +30,20 @@ def main():
         default=True,
         help="Skip subjects that already have a directory with results.",
     )
+    parser.add_argument(
+        "--debug",
+        default=False,
+        help="When set, it changes the logging level to debug.",
+    )
     (prompting_args, script_args) = parser.parse_args_into_dataclasses()
+    if script_args.debug:
+        logger.setLevel(logging.DEBUG)
 
-    is_multi_control = prompting_args.mode in ["random_tweet", "random_user", "multi_control"]
+    is_multi_control = prompting_args.mode in [
+        "random_tweet",
+        "random_user",
+        "multi_control",
+    ]
 
     model_name = prompting_args.model_id.split("/")[-1]
     print(f"Running evaluation on {model_name}")
@@ -65,14 +76,23 @@ def main():
             res_dir = get_prompt_results_path().joinpath(model_name).joinpath(s_id)
             if not os.path.exists(res_dir):
                 os.makedirs(res_dir)
-            for mode, nlls in results.items():
+
+            if type(results) == dict:
+                for mode, nlls in results.items():
+                    res_file = res_dir.joinpath(f"{mode}.npy")
+                    with open(res_file, "wb") as f:
+                        np.save(f, nlls.numpy())
+            elif type(results) == torch.Tensor:
+                mode = prompting_args.mode
                 res_file = res_dir.joinpath(f"{mode}.npy")
                 with open(res_file, "wb") as f:
-                    np.save(f, nlls.numpy())
+                    np.save(f, results.numpy())
             # save arguments (mode will be the last set mode, eg. 'random')
             json.dump(prompting_args.__dict__, open(res_dir.joinpath("args.json"), "w"))
         except TokenizationError as e:
-            main_logger.error(f"Subject id: {s_id}. Error message: {e}")
+            logger.error(f"Subject id: {s_id}. Error message: {e}")
+        except FileNotFoundError as e:
+            logger.error(f"Subject data not found ({s_id}). Error message: {e}")
 
 
 if __name__ == "__main__":
