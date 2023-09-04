@@ -174,7 +174,7 @@ def _window_context_stride(config: PromptingArguments, tokenizer):
     if config.stride == None:
         stride = window_length // 2
     else:
-        assert config.stride > 0
+        assert config.stride >= 0
         stride = config.stride
 
     print(f"Window length: {window_length}\nContext length: {context_length}\nStride: {stride}")
@@ -189,9 +189,8 @@ def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep, mode):
         # even when there is no context preceding the first eval token
         tweets = tokenizer.bos_token + tweets
 
-    tokens_in_eval = len(tokenizer(tweets)['input_ids'])
-    print(f"Eval total length: {tokens_in_eval} tokens / {len(tweets.split())} words / {len(data['text'])} tweets.")
-    
+    tokenizer.truncation_side = "right"
+    tokenizer.padding_side = "right"
     tokenized_tweets = tokenizer(
         tweets,
         return_overflowing_tokens=True,  # sliding window
