@@ -5,7 +5,13 @@ import os
 import numpy as np
 from dotenv import load_dotenv
 import torch
-from prompting import PromptingArguments, TokenizationError, user_nlls
+from prompting import (
+    PromptingArguments,
+    TokenizationError,
+    user_nlls,
+    load_model,
+    load_tokenizer,
+)
 from tqdm import tqdm
 from transformers import HfArgumentParser
 from utils import get_subject_data_path, get_prompt_results_path
@@ -46,7 +52,16 @@ def main():
     ]
 
     model_name = prompting_args.model_id.split("/")[-1]
-    print(f"Running evaluation on {model_name}")
+    logger.info(f"Running evaluation on {model_name}")
+
+    # preload model once into memory, instead of every time we call user_nlls(...)
+    model = load_model(device=prompting_args.device, model_id=prompting_args.model_id)
+    tokenizer_id = (
+        prompting_args.tokenizer_id
+        if prompting_args.tokenizer_id is not None
+        else prompting_args.model_id
+    )
+    tokenizer = load_tokenizer(tokenizer_id=tokenizer_id)
 
     if script_args.subjects_file is None:
         # get all subjects
@@ -70,7 +85,7 @@ def main():
         prompting_args.user_id = s_id
         try:
             # collect nlls for each mode
-            results = user_nlls(prompting_args)
+            results = user_nlls(prompting_args, model=model, tokenizer=tokenizer)
 
             # save results
             res_dir = get_prompt_results_path().joinpath(model_name).joinpath(s_id)

@@ -133,16 +133,12 @@ class PromptingArguments:
             self.batched = True
 
 
-def _data_model_tokenizer(config: PromptingArguments):
-    device = torch.device(config.device)
-
-    is_multi_control = config.mode in ["random_tweet", "random_user", "multi_control"]
-
-    # load data
+def load_data(mode: str, user_id: str, from_disk: bool):
+    is_multi_control = mode in ["random_tweet", "random_user", "multi_control"]
     data = (
         load_dataset(
-            user_id=config.user_id,
-            from_disk=config.from_disk,
+            user_id=user_id,
+            from_disk=from_disk,
             data_path=get_subject_data_path(multi_control=is_multi_control),
         )
         .sort("created_at")
@@ -150,22 +146,43 @@ def _data_model_tokenizer(config: PromptingArguments):
         .map(remove_urls)
         .map(remove_extra_spaces)
     )
+    return data
 
-    # load model
+
+def load_model(device: str, model_id: str):
+    device = torch.device(device)
     model = AutoModelForCausalLM.from_pretrained(
-        config.model_id, use_safetensors=False
+        model_id,
+        use_safetensors=False,
     ).to(device)
+    return model
 
-    # load tokenizer
-    if config.tokenizer_id is not None:
-        tokenizer = AutoTokenizer.from_pretrained(config.tokenizer_id)
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(config.model_id)
+
+def load_tokenizer(tokenizer_id: str = None):
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     logger.debug(
         f"Tokenizer\n\t- pad token: {tokenizer.pad_token} (id: {tokenizer.pad_token_id})\n\t- bos token: {tokenizer.bos_token} (id: {tokenizer.bos_token_id})\n\t- eos token: {tokenizer.eos_token} (id: {tokenizer.eos_token_id})"
     )
+    return tokenizer
+
+
+def _data_model_tokenizer(config: PromptingArguments):
+
+    # load data
+    data = load_data(
+        mode=config.mode, user_id=config.user_id, from_disk=config.from_disk
+    )
+
+    # load model
+    model = load_model(device=config.device, model_id=config.model_id)
+
+    # load tokenizer
+    tokenizer_id = (
+        config.tokenizer_id if config.tokenizer_id is not None else config.model_id
+    )
+    tokenizer = load_tokenizer(tokenizer_id=tokenizer_id)
 
     return data, model, tokenizer
 
@@ -308,12 +325,18 @@ def _tokenized_tweets_context(
         return tokenized_tweets, tokenized_context
 
 
-def user_nlls(config: PromptingArguments):
+def user_nlls(
+    config: PromptingArguments,
+    model: Optional[AutoModelForCausalLM] = None,
+    tokenizer: Optional[AutoTokenizer] = None,
+):
     """
     Runs prompting evaluation for all modes.
 
     Args:
         config (PromptingArguments): Arguments for prompting.
+        model (AutoModelForCausalLM): The model used for calculating the negative log likelihoods. Default is None, in which case the model is loaded based on the PromptingArguments.
+        tokenizer (AutoTokenizer): The tokenizer used for tokenizing the eval / context data. Default is None, in which case the tokenizer is loaded based on the PromptingArguments.
 
     Returns:
         dict | torch.Tensor: If mode is 'all', or 'multi_control' returns a dictionary of tensors.
@@ -322,7 +345,17 @@ def user_nlls(config: PromptingArguments):
         In case of 'multi_control':
             The arrays contain token nlls for all of the following modes: ['none', 'user', 'peer', 'random_tweet', 'random_user'].
     """
-    data, model, tokenizer = _data_model_tokenizer(config)
+    both_not_set = model is None and tokenizer is None
+    both_are_set = model is not None and tokenizer is not None
+    assert (
+        both_not_set or both_are_set
+    ), "Either both model and tokenizer have to be set, or none."
+    if model is None and tokenizer is None:
+        data, model, tokenizer = _data_model_tokenizer(config)
+    else:
+        data = load_data(
+            mode=config.mode, user_id=config.user_id, from_disk=config.from_disk
+        )
 
     window_length, context_length, stride = _window_context_stride(config, tokenizer)
 
