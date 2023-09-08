@@ -164,7 +164,7 @@ def load_model(device: str, model_id: str, offload_folder: str):
         use_safetensors=False,
         device_map="auto",
         offload_folder=offload_folder,
-    ).to(device)
+    )
     return model
 
 
@@ -322,6 +322,10 @@ def _tokenized_tweets_context(
         mode=mode,
     )
     if mode == "none":
+        return tokenized_tweets, None
+    if context_length == 0:
+        if mode != "none":
+            logger.warning(f"Context length is set to 0, but mode is set to {mode}.")
         return tokenized_tweets, None
     else:
         split = mode + "_context"

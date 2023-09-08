@@ -15,6 +15,7 @@ from prompting import (
 from tqdm import tqdm
 from transformers import HfArgumentParser
 from utils import get_subject_data_path, get_prompt_results_path
+from torch.cuda import OutOfMemoryError
 
 load_dotenv()
 
@@ -112,6 +113,8 @@ def main():
             logger.error(f"Subject id: {s_id}. Error message: {e}")
         except FileNotFoundError as e:
             logger.error(f"Subject data not found ({s_id}). Error message: {e}")
+        except OutOfMemoryError as e:
+            logger.error(f"Subject id: {s_id}. Error message: {e}")
 
 
 if __name__ == "__main__":

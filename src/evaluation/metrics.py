@@ -70,12 +70,13 @@ def _batched_negative_log_likelihoods(
         target_ids = torch.where(attention_mask == 0, -100, input_ids)
         # ignore context
         target_ids[0, :context_len] = -100
-        # ignore context + overlap
-        target_ids[1:, : context_len + overlap_len] = -100
+        if len(target_ids) > 1:
+            # ignore context + overlap
+            target_ids[1:, : context_len + overlap_len] = -100
 
     else:
-        input_ids = text["input_ids"].squeeze()
-        attention_mask = text["attention_mask"].squeeze()
+        input_ids = text["input_ids"]
+        attention_mask = text["attention_mask"]
         target_ids = torch.where(attention_mask == 0, -100, input_ids)
         # ignore overlap
         target_ids[1:, :overlap_len] = -100
