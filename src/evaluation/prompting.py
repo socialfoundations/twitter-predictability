@@ -49,6 +49,13 @@ class PromptingArguments:
     model_id: str = field(
         default="gpt2", metadata={"help": "The model that we would like evaluate on."}
     )
+    
+    load_in_8bit: bool = field(
+        default=False,
+        metadata={
+            "help": "Load model in 8 bit precision."
+        },
+    )
 
     tokenizer_id: str = field(
         default=None,
@@ -157,13 +164,14 @@ def load_data(mode: str, user_id: str, from_disk: bool):
     return data
 
 
-def load_model(device: str, model_id: str, offload_folder: str):
+def load_model(device: str, model_id: str, offload_folder: str, load_in_8bit: bool =False):
     device = torch.device(device)
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         use_safetensors=False,
         device_map="auto",
         offload_folder=offload_folder,
+        load_in_8bit=load_in_8bit
     )
     return model
 
@@ -190,6 +198,7 @@ def _data_model_tokenizer(config: PromptingArguments):
         device=config.device,
         model_id=config.model_id,
         offload_folder=config.offload_folder,
+        load_in_8bit=config.load_in_8bit,
     )
 
     # load tokenizer

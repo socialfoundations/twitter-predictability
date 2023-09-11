@@ -60,6 +60,7 @@ def main():
         device=prompting_args.device,
         model_id=prompting_args.model_id,
         offload_folder=prompting_args.offload_folder,
+        load_in_8bit=prompting_args.load_in_8bit,
     )
     tokenizer_id = (
         prompting_args.tokenizer_id
