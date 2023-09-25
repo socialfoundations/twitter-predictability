@@ -1,0 +1,17 @@
+executable = scripts/$(Model)/prompt_all.sh 
+arguments = --skip_if_exists --subjects_file subjects_chunked/chunk_$(Process).txt $(Args)
+
+# hardware requirements
+request_gpus = 4
+request_cpus = 2
+request_memory = 32768
+request_disk = 200G   
+requirements = CUDACapability >= 7.0
+requirements = TARGET.CUDAGlobalMemoryMb > 50000
+
+# other options
+error = out/$(Model)/prompt_all_$(Process).err
+output = out/$(Model)/prompt_all_$(Process).out
+log = out/$(Model)/prompt_all_$(Process).log
+
+queue 1 Args from args/$(Model)/nonfinetuned.txt

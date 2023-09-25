@@ -1,0 +1,12 @@
+--user_id 10336942 \
+--from_disk \
+--device cuda \
+--model_id meta-llama/Llama-2-70b-hf \
+--ctxt_len 600 \
+--window_len 3496 \
+--batched \
+--batch_size 2 \
+--mode multi_control \
+--token_level_nlls \
+--seq_sep space \
+--offload_folder /tmp/offload \
