@@ -49,12 +49,10 @@ class PromptingArguments:
     model_id: str = field(
         default="gpt2", metadata={"help": "The model that we would like evaluate on."}
     )
-    
+
     load_in_8bit: bool = field(
         default=False,
-        metadata={
-            "help": "Load model in 8 bit precision."
-        },
+        metadata={"help": "Load model in 8 bit precision."},
     )
 
     tokenizer_id: str = field(
@@ -82,6 +80,13 @@ class PromptingArguments:
         default=None,
         metadata={
             "help": "Stride strategy when sliding over the evaluation sequence. If None then stride will be half the window length. It is the size of the overlapping chunks."
+        },
+    )
+
+    tweet_by_tweet: bool = field(
+        default=False,
+        metadata={
+            "help": "Don't use sliding window strategy to iterate over eval tweets (like one would with a continuous block of text). Instead, run each tweet through the model separately. Context length will depend on the longest eval tweet."
         },
     )
 
@@ -147,6 +152,12 @@ class PromptingArguments:
             )
             self.batched = True
 
+        if self.tweet_by_tweet:
+            if self.window_len or self.stride:
+                logger.warning(
+                    f"Window length / stride set, however sliding window processing is disabled."
+                )
+
 
 def load_data(mode: str, user_id: str, from_disk: bool):
     is_multi_control = mode in ["random_tweet", "random_user", "multi_control"]
@@ -164,14 +175,16 @@ def load_data(mode: str, user_id: str, from_disk: bool):
     return data
 
 
-def load_model(device: str, model_id: str, offload_folder: str, load_in_8bit: bool =False):
+def load_model(
+    device: str, model_id: str, offload_folder: str, load_in_8bit: bool = False
+):
     device = torch.device(device)
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         use_safetensors=False,
         device_map="auto",
         offload_folder=offload_folder,
-        load_in_8bit=load_in_8bit
+        load_in_8bit=load_in_8bit,
     )
     return model
 
@@ -247,16 +260,23 @@ def _window_context_stride(config: PromptingArguments, tokenizer):
     return window_length, context_length, stride
 
 
-def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep, mode):
+def _tokenization_stats(text, tokenizer, name="text"):
+    tokens = tokenizer(text)["input_ids"]
+    words = text.split()
+    logger.debug(
+        f"Total length of {name}: {len(tokens)} tokens ({len(set(tokens))} unique) / {len(words)} words ({len(set(words))} unique)."
+    )
+
+
+def _sliding_window_tokenization(data, tokenizer, window_length, stride, seq_sep, mode):
     tweets = seq_sep.join(data["text"])
     if mode == "none":
         # this ensures we get the probability for generating the first token P(t_1|BOS)
         # even when there is no context preceding the first eval token
         tweets = tokenizer.bos_token + tweets
 
-    tokens_in_eval = len(tokenizer(tweets)["input_ids"])
-    logger.debug(
-        f"Eval total length: {tokens_in_eval} tokens / {len(tweets.split())} words / {len(data['text'])} tweets."
+    _tokenization_stats(
+        text=seq_sep.join(data["text"]), tokenizer=tokenizer, name="eval tweets"
     )
 
     tokenizer.truncation_side = "right"
@@ -271,10 +291,46 @@ def _tokenize_eval_data(data, tokenizer, window_length, stride, seq_sep, mode):
         return_tensors="pt",
         add_special_tokens=False,
     )
+
+    return tokenized_tweets
+
+
+def _tweet_by_tweet_tokenization(data, tokenizer, mode):
+    _tokenization_stats(
+        text="".join(data["text"]), tokenizer=tokenizer, name="eval tweets"
+    )
+
+    def add_bos_token(x):
+        return {"text": tokenizer.bos_token + x["text"]}
+
+    def tokenize_func(x):
+        return tokenizer(x["text"], padding=True, return_tensors="pt")
+
+    if mode == "none":
+        data = data.map(add_bos_token)
+    tokenized_tweets = data.map(tokenize_func, batched=True)
+    to_keep = ["input_ids", "attention_mask"]
+    to_remove = [f for f in tokenized_tweets.features.keys() if f not in to_keep]
+    tokenized_tweets = tokenized_tweets.remove_columns(to_remove)
+    tokenized_tweets.set_format(type="torch")
+    return tokenized_tweets
+
+
+def _tokenize_eval_data(
+    data, tokenizer, window_length, stride, seq_sep, mode, strategy="sliding_window"
+):
+    assert strategy in ["sliding_window", "tweet_by_tweet"]
+    if strategy == "sliding_window":
+        logger.info("Tokenizing eval data with a sliding window strategy.")
+        tokenized_tweets = _sliding_window_tokenization(
+            data, tokenizer, window_length, stride, seq_sep, mode
+        )
+    elif strategy == "tweet_by_tweet":
+        logger.info("Tokenizing eval data with a tweet-by-tweet strategy.")
+        tokenized_tweets = _tweet_by_tweet_tokenization(data, tokenizer, mode)
     logger.debug(
         f"Tokenized evaluation data shape (n x window_len): {tokenized_tweets['input_ids'].shape}"
     )
-
     return tokenized_tweets
 
 
@@ -285,10 +341,7 @@ class TokenizationError(RuntimeError):
 def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
     context = tweet_separator.join(context_dataset["text"])
 
-    tokens_in_ctxt = len(tokenizer(context)["input_ids"])
-    logger.debug(
-        f"Context total length: {tokens_in_ctxt} tokens / {len(context.split())} words / {len(context_dataset['text'])} tweets."
-    )
+    _tokenization_stats(text=context, tokenizer=tokenizer, name="context tweets")
 
     tokenizer.truncation_side = (
         "left"  # change to "left" to discard "oldest" context tweets
@@ -320,7 +373,7 @@ def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
 
 
 def _tokenized_tweets_context(
-    mode, data, tokenizer, window_length, context_length, stride, seq_sep
+    mode, data, tokenizer, window_length, context_length, stride, seq_sep, strategy
 ):
     tokenized_tweets = _tokenize_eval_data(
         data["eval"],
@@ -329,7 +382,20 @@ def _tokenized_tweets_context(
         stride,
         seq_sep=seq_sep,
         mode=mode,
+        strategy=strategy,
     )
+
+    if strategy == "tweet_by_tweet":
+        l_eval = len(tokenized_tweets["input_ids"][0])
+        # TODO: model max length is not set for some tokenizers...
+        l_max = tokenizer.model_max_length
+        if l_eval > l_max:
+            raise ValueError(
+                f"Length of longest tokenized eval tweet ({l_eval})) exceeds maximum model sequence length ({l_max})!"
+            )
+        context_length = l_max - l_eval
+        logger.debug(f"Context length set to {context_length}.")
+
     if mode == "none":
         return tokenized_tweets, None
     if context_length == 0:
@@ -384,7 +450,14 @@ def user_nlls(
             mode=config.mode, user_id=config.user_id, from_disk=config.from_disk
         )
 
-    window_length, context_length, stride = _window_context_stride(config, tokenizer)
+    window_length, context_length, stride = None, None, 0
+    if config.tweet_by_tweet:
+        strategy = "tweet_by_tweet"
+    else:
+        strategy = "sliding_window"
+        window_length, context_length, stride = _window_context_stride(
+            config, tokenizer
+        )
 
     seq_sep_token = torch.tensor(
         tokenizer.encode(config.seq_sep, add_special_tokens=False)
@@ -400,6 +473,7 @@ def user_nlls(
             context_length=context_length,
             stride=stride,
             seq_sep=config.seq_sep,
+            strategy=strategy,
         )
 
         nlls = negative_log_likelihoods(
