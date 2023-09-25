@@ -185,6 +185,7 @@ def load_model(
         device_map="auto",
         offload_folder=offload_folder,
         load_in_8bit=load_in_8bit,
+        trust_remote_code=True,
     )
     return model
 
@@ -193,6 +194,8 @@ def load_tokenizer(tokenizer_id: str = None):
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    if tokenizer.bos_token is None:
+        tokenizer.bos_token = tokenizer.eos_token
     logger.debug(
         f"Tokenizer\n\t- pad token: {tokenizer.pad_token} (id: {tokenizer.pad_token_id})\n\t- bos token: {tokenizer.bos_token} (id: {tokenizer.bos_token_id})\n\t- eos token: {tokenizer.eos_token} (id: {tokenizer.eos_token_id})"
     )
