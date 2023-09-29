@@ -42,6 +42,11 @@ def main():
         action="store_true",
         help="When set, it changes the logging level to debug.",
     )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Save results to test/ folder.",
+    )
     (prompting_args, script_args) = parser.parse_args_into_dataclasses()
     if script_args.debug:
         logger.setLevel(logging.DEBUG)
@@ -81,23 +86,22 @@ def main():
             raise RuntimeError(f"{script_args.subjects_file} doesn't exist.")
 
     for s_id in tqdm(subjects, desc="subject", position=0):
+        if script_args.test:
+            res_dir = get_prompt_results_path().joinpath("test").joinpath(s_id)
+        else:
+            res_dir = get_prompt_results_path().joinpath(model_name).joinpath(s_id)
         if script_args.skip_if_exists:
-            user_res_path = (
-                get_prompt_results_path().joinpath(model_name).joinpath(s_id)
-            )
-            path_exists = os.path.exists(user_res_path)
-            if path_exists and os.listdir(user_res_path):
+            path_exists = os.path.exists(res_dir)
+            if path_exists and os.listdir(res_dir):
                 continue
         prompting_args.user_id = s_id
         try:
             # collect nlls for each mode
             results = user_nlls(prompting_args, model=model, tokenizer=tokenizer)
-
+            
             # save results
-            res_dir = get_prompt_results_path().joinpath(model_name).joinpath(s_id)
             if not os.path.exists(res_dir):
                 os.makedirs(res_dir)
-
             if type(results) == dict:
                 for mode, nlls in results.items():
                     res_file = res_dir.joinpath(f"{mode}.npy")
