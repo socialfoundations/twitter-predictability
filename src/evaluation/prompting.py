@@ -302,7 +302,9 @@ def _tweet_by_tweet_tokenization(data, tokenizer, mode):
     _tokenization_stats(
         text="".join(data["text"]), tokenizer=tokenizer, name="eval tweets"
     )
-
+    
+    tokenizer.truncation_side = "right"
+    tokenizer.padding_side = "right"
     def add_bos_token(x):
         return {"text": tokenizer.bos_token + x["text"]}
 
