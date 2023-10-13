@@ -6,9 +6,106 @@ from utils import get_prompt_results_path, to_color, color_text
 from sklearn.preprocessing import minmax_scale
 
 load_dotenv()
+
+model_tokenizer = {
+    "gpt2-xl": "gpt2",
+    "llama-70b": "meta-llama/Llama-2-70b-hf",
+}
+
+model_fullname = {
+    "gpt2-xl": "gpt2-xl",
+    "llama-70b": "Llama-2-70b-hf-8bit",
+}
+
+
+def _colorized_text(text_list, normalized_values):
+    assert len(text_list) == len(normalized_values), f"Lengths must be equal! {len(text)} != {len(normalized_values)}"
+    for val, chunk in zip(normalized_values, text_list):
+        rgb = to_color(val)[:-1]
+        color_text(chunk, rgb)
+    print()
+
+
+def _plot_eval_tweets_colorized(subject_id, values, model="gpt2-xl", token_level=False):
+    # normalize values that we are trying to plot
+    norm_vals = minmax_scale(values)
+
+    # load data and tokenizer
+    data = load_data(mode="multi_control", user_id=subject_id, from_disk=True)
+    tokenizer = load_tokenizer(model_tokenizer[model])
+
+    start_token = 0
+    for tweet in data["eval"]["text"]:
+        # chunk tweets into individual tokens
+        tokenized_tweet = tokenizer.encode(tweet, add_special_tokens=False)
+        tokens = tokenizer.convert_ids_to_tokens(tokenized_tweet)
+        n_tokens = len(tokens)
+    
+        token_level_vals = norm_vals[start_token:start_token+n_tokens]
+        start_token += n_tokens
+    
+        if token_level:
+            # token-level coloring
+            _colorized_text(tokens, token_level_vals)
+        else:
+            # word-level coloring
+            word_level_vals = []
+            length = 1
+            for i in range(n_tokens+1):
+                # l = number of words up to i'th token
+                l = len(tokenizer.convert_tokens_to_string(tokens[:i]).split())
+                if l > length:
+                    val = np.max(token_level_vals[length-1:i])
+                    # word = tokenizer.convert_tokens_to_string(tokens[:i]).split()[-2]
+                    word_level_vals.append(val)
+                    # print(f"{len(new_tweet_nlls)}. Word: {word} \t NLL: {nll}")
+                    length = l
+            # word = tokenizer.convert_tokens_to_string(tokens[:i]).split()[-1]
+            last_val = np.max(token_level_vals[length-1:])
+            word_level_vals.append(last_val)
+            # print(f"{len(new_tweet_nlls)}. Word: {word} \t NLL: {last_nll}")
+            words = list(map(lambda word: word + " ", tokenizer.convert_tokens_to_string(tokens).split()))
+            _colorized_text(words, word_level_vals)
     
 
-def plot_improvement(subject_id, context="user", tokenizer_id="gpt2", model_name="gpt2", token_level=False):
+def _plot_legend(values):
+    min_, max_ = np.min(values), np.max(values)
+    color_text("Minimum: " + str(min_), to_color(min_)[:-1])
+    print()
+    color_text("Maximum: " + str(max_), to_color(max_)[:-1])
+    print()
+    print("Average (token-level): ", np.mean(values))
+
+def plot_improvement(subject_id, base="none", context="user", model="gpt2-xl", token_level=False):
+    user_res_path = get_prompt_results_path().joinpath(model_fullname[model]).joinpath(subject_id)
+    # load base
+    base_file = user_res_path.joinpath(f"{base}.npy")
+    base_nlls = np.load(base_file)
+    # load context
+    context_file = user_res_path.joinpath(f"{context}.npy")
+    context_nlls = np.load(context_file)
+    # calculate diff
+    diff = base_nlls - context_nlls
+    
+    # plot
+    _plot_eval_tweets_colorized(subject_id, diff, model, token_level)
+    _plot_legend(diff)
+
+def plot_NLLs(subject_id, context=None, model="gpt2-xl", token_level=False):
+    # load calculated NLLs
+    user_res_path = get_prompt_results_path().joinpath(model_fullname[model]).joinpath(subject_id)
+    if context is not None:
+        res_file = user_res_path.joinpath(f"{context}.npy")
+    else:
+        res_file = user_res_path.joinpath("none.npy")
+    nlls = np.load(res_file)
+
+    # plot
+    _plot_eval_tweets_colorized(subject_id, nlls, model, token_level)
+    _plot_legend(nlls)
+    
+
+def _plot_improvement_deprecated(subject_id, context="user", tokenizer_id="gpt2", model_name="gpt2", token_level=False):
     data = load_data(mode="multi_control", user_id=subject_id, from_disk=True)
     tokenizer = load_tokenizer(tokenizer_id)
 
