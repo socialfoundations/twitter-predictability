@@ -386,7 +386,10 @@ def _tokenized_tweets_context(
     if strategy == "tweet_by_tweet":
         l_eval = len(tokenized_tweets["input_ids"][0])
         # TODO: model max length is not set for some tokenizers...
-        l_max = tokenizer.model_max_length
+        if tokenizer.model_max_length < 1e6:
+            l_max = tokenizer.model_max_length
+        else:
+            l_max = 4096
         if l_eval > l_max:
             raise ValueError(
                 f"Length of longest tokenized eval tweet ({l_eval})) exceeds maximum model sequence length ({l_max})!"
@@ -403,6 +406,7 @@ def _tokenized_tweets_context(
     else:
         split = mode + "_context"
         if split in data.keys():
+            logger.info(f"Tokenizing {split}...")
             tokenized_context = _tokenize_context(
                 tokenizer,
                 data[mode + "_context"],
@@ -522,8 +526,9 @@ def main():
 
     if type(nlls) == torch.Tensor:
         nll_mean, nll_err = torch_compute_confidence_interval(nlls, confidence=0.9)
+        nll_std = nlls.std(unbiased=True).item()
 
-        print(f"Negative log-likelihood (mean): {nll_mean:.4f} +/- {nll_err:.4f}")
+        print(f"Negative log-likelihood (mean +/- ci, std): {nll_mean:.4f} +/- {nll_err:.4f}, {nll_std:.4f}")
         print(
             f"Perplexity range: ({np.exp(nll_mean-nll_err):.4f}, {np.exp(nll_mean+nll_err):.4f})"
         )
@@ -533,8 +538,9 @@ def main():
             nll_mean, nll_err = torch_compute_confidence_interval(
                 nlls[mode], confidence=0.9
             )
+            nll_std = nlls[mode].std(unbiased=True).item()
 
-            print(f"Negative log-likelihood (mean): {nll_mean:.4f} +/- {nll_err:.4f}")
+            print(f"Negative log-likelihood (mean +/- ci, std): {nll_mean:.4f} +/- {nll_err:.4f}, {nll_std:.4f}")
             print(
                 f"Perplexity range: ({np.exp(nll_mean-nll_err):.4f}, {np.exp(nll_mean+nll_err):.4f})"
             )
