@@ -264,7 +264,7 @@ def _window_context_stride(config: PromptingArguments, tokenizer):
 
 
 def _tokenization_stats(text, tokenizer, name="text"):
-    tokens = tokenizer(text)["input_ids"]
+    tokens = tokenizer(text, add_special_tokens=True)["input_ids"]
     words = text.split()
     logger.debug(
         f"Total length of {name}: {len(tokens)} tokens ({len(set(tokens))} unique) / {len(words)} words ({len(set(words))} unique)."
@@ -309,11 +309,11 @@ def _tweet_by_tweet_tokenization(data, tokenizer, mode):
         return {"text": tokenizer.bos_token + x["text"]}
 
     def tokenize_func(x):
-        return tokenizer(x["text"], padding=True, return_tensors="pt")
+        return tokenizer(x["text"], padding=True, return_tensors="pt", add_special_tokens=False)
 
     if mode == "none":
-        data = data.map(add_bos_token)
-    tokenized_tweets = data.map(tokenize_func, batched=True)
+        data = data.map(add_bos_token, keep_in_memory=True)
+    tokenized_tweets = data.map(tokenize_func, batched=True, keep_in_memory=True)
     to_keep = ["input_ids", "attention_mask"]
     to_remove = [f for f in tokenized_tweets.features.keys() if f not in to_keep]
     tokenized_tweets = tokenized_tweets.remove_columns(to_remove)
