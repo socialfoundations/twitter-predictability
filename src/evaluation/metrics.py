@@ -24,8 +24,10 @@ def torch_compute_confidence_interval(
 
 
 def _token_level_nlls(logits, target_ids, device="cpu"):
+    # logits dimensions: [bs, input_len, num_tokens]
     shift_logits = logits[..., :-1, :].contiguous()
     shift_logits = shift_logits.to(device)
+    # labels dimensions: [bs, input_len]
     shift_labels = target_ids[..., 1:].contiguous()
     shift_labels = shift_labels.to(device)
 
@@ -33,8 +35,8 @@ def _token_level_nlls(logits, target_ids, device="cpu"):
     neg_log_likelihoods = loss_fn(
         shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
     )
-    # the targets set to -100 will have nll set to 0 -> we want to skip those!
-    nnz = neg_log_likelihoods.nonzero()
+    # select indices where target_ids wasn't set to -100
+    nnz = (shift_labels.flatten() != -100).nonzero()
     return neg_log_likelihoods[nnz].flatten()
 
 
