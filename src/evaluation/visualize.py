@@ -4,18 +4,9 @@ from prompting import load_data, load_tokenizer
 from dotenv import load_dotenv
 from utils import get_prompt_results_path, to_color, color_text
 from sklearn.preprocessing import minmax_scale
+from constants.model import MODEL_TOKENIZER, MODEL_FULLNAME
 
 load_dotenv()
-
-model_tokenizer = {
-    "gpt2-xl": "gpt2",
-    "llama-70b": "meta-llama/Llama-2-70b-hf",
-}
-
-model_fullname = {
-    "gpt2-xl": "gpt2-xl",
-    "llama-70b": "Llama-2-70b-hf-8bit",
-}
 
 
 def _colorized_text(text_list, normalized_values):
@@ -32,7 +23,7 @@ def _plot_eval_tweets_colorized(subject_id, values, model="gpt2-xl", token_level
 
     # load data and tokenizer
     data = load_data(mode="multi_control", user_id=subject_id, from_disk=True)
-    tokenizer = load_tokenizer(model_tokenizer[model])
+    tokenizer = load_tokenizer(MODEL_TOKENIZER[model])
 
     start_token = 0
     for tweet in data["eval"]["text"]:
@@ -74,10 +65,12 @@ def _plot_legend(values):
     print()
     color_text("Maximum: " + str(max_), to_color(max_)[:-1])
     print()
+    color_text("Zero: " + str(0), to_color(0)[:-1])
+    print()
     print("Average (token-level): ", np.mean(values))
 
 def plot_improvement(subject_id, base="none", context="user", model="gpt2-xl", token_level=False):
-    user_res_path = get_prompt_results_path().joinpath(model_fullname[model]).joinpath(subject_id)
+    user_res_path = get_prompt_results_path().joinpath(MODEL_FULLNAME[model]).joinpath(subject_id)
     # load base
     base_file = user_res_path.joinpath(f"{base}.npy")
     base_nlls = np.load(base_file)
@@ -91,13 +84,10 @@ def plot_improvement(subject_id, base="none", context="user", model="gpt2-xl", t
     _plot_eval_tweets_colorized(subject_id, diff, model, token_level)
     _plot_legend(diff)
 
-def plot_NLLs(subject_id, context=None, model="gpt2-xl", token_level=False):
+def plot_NLLs(subject_id, context="none", model="gpt2-xl", token_level=False):
     # load calculated NLLs
-    user_res_path = get_prompt_results_path().joinpath(model_fullname[model]).joinpath(subject_id)
-    if context is not None:
-        res_file = user_res_path.joinpath(f"{context}.npy")
-    else:
-        res_file = user_res_path.joinpath("none.npy")
+    user_res_path = get_prompt_results_path().joinpath(MODEL_FULLNAME[model]).joinpath(subject_id)
+    res_file = user_res_path.joinpath(f"{context}.npy")
     nlls = np.load(res_file)
 
     # plot
