@@ -65,6 +65,7 @@ def main():
         model_id=prompting_args.model_id,
         offload_folder=prompting_args.offload_folder,
         load_in_8bit=prompting_args.load_in_8bit,
+        load_in_4bit=prompting_args.load_in_4bit,
     )
     tokenizer_id = (
         prompting_args.tokenizer_id
@@ -85,10 +86,16 @@ def main():
             raise RuntimeError(f"{script_args.subjects_file} doesn't exist.")
 
     for s_id in tqdm(subjects, desc="subject", position=0):
+        model_postfix = ""
+        if prompting_args.load_in_8bit:
+            model_postfix = "-8bit"
+        if prompting_args.load_in_4bit:
+            model_postfix =  "-4bit"
+            
         if script_args.test:
-            res_dir = get_prompt_results_path().joinpath("test").joinpath(s_id)
+            res_dir = get_prompt_results_path().joinpath("test" + model_postfix).joinpath(s_id)
         else:
-            res_dir = get_prompt_results_path().joinpath(model_name).joinpath(s_id)
+            res_dir = get_prompt_results_path().joinpath(model_name + model_postfix).joinpath(s_id)
         if script_args.skip_if_exists:
             path_exists = os.path.exists(res_dir)
             if path_exists and os.listdir(res_dir):

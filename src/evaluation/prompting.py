@@ -54,6 +54,11 @@ class PromptingArguments:
         default=False,
         metadata={"help": "Load model in 8 bit precision."},
     )
+    
+    load_in_4bit: bool = field(
+        default=False,
+        metadata={"help": "Load model in 4 bit precision. Overrides --load_in_8bit if set."},
+    )
 
     tokenizer_id: str = field(
         default=None,
@@ -158,6 +163,10 @@ class PromptingArguments:
                     f"Window length / stride set, however sliding window processing is disabled."
                 )
 
+        if self.load_in_8bit and self.load_in_4bit:
+            self.load_in_8bit = False
+            logger.warning("Both quantization methods (8 bit and 4 bit) were set to true. 4 bit overrides 8 bit, setting --load_in_8bit to False.")
+
 
 def load_data(mode: str, user_id: str, from_disk: bool):
     is_multi_control = mode in ["random_tweet", "random_user", "multi_control"]
@@ -176,7 +185,7 @@ def load_data(mode: str, user_id: str, from_disk: bool):
 
 
 def load_model(
-    device: str, model_id: str, offload_folder: str, load_in_8bit: bool = False
+        device: str, model_id: str, offload_folder: str, load_in_8bit: bool = False, load_in_4bit: bool = False
 ):
     device = torch.device(device)
     model = AutoModelForCausalLM.from_pretrained(
@@ -185,6 +194,7 @@ def load_model(
         device_map="auto",
         offload_folder=offload_folder,
         load_in_8bit=load_in_8bit,
+        load_in_4bit=load_in_4bit,
         trust_remote_code=True,
     )
     return model
