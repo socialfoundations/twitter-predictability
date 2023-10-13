@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import torch
 from prompting import (
     PromptingArguments,
-    TokenizationError,
     user_nlls,
     load_model,
     load_tokenizer,
@@ -114,8 +113,6 @@ def main():
                     np.save(f, results.numpy())
             # save arguments (mode will be the last set mode, eg. 'random')
             json.dump(prompting_args.__dict__, open(res_dir.joinpath("args.json"), "w"))
-        except TokenizationError as e:
-            logger.error(f"Subject id: {s_id}. Error message: {e}")
         except FileNotFoundError as e:
             logger.error(f"Subject data not found ({s_id}). Error message: {e}")
         except OutOfMemoryError as e:

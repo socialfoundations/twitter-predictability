@@ -339,10 +339,6 @@ def _tokenize_eval_data(
     return tokenized_tweets
 
 
-class TokenizationError(RuntimeError):
-    pass
-
-
 def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
     context = tweet_separator.join(context_dataset["text"])
 
@@ -351,12 +347,11 @@ def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
     tokenizer.truncation_side = (
         "left"  # change to "left" to discard "oldest" context tweets
     )
-    tokenizer.padding_side = "left"
     tokenized_context = tokenizer(
         context,
         truncation=True,
         max_length=context_len,
-        padding="max_length",  # pad up to max_length
+        padding=False,
         return_tensors="pt",
         add_special_tokens=False,
     )
@@ -370,9 +365,7 @@ def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
 
     context_length_no_pad = res["attention_mask"].count_nonzero().item()
     if context_length_no_pad < context_len:
-        raise TokenizationError(
-            f"The provided context (of length {context_length_no_pad}) does not reach specified context length ({context_len})."
-        )
+        logger.warning(f"The provided context (of length {context_length_no_pad}) does not reach specified context length ({context_len}).")
 
     return res
 
