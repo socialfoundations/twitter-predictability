@@ -10,8 +10,8 @@ requirements = CUDACapability >= 7.0
 requirements = TARGET.CUDAGlobalMemoryMb > 50000
 
 # other options
-error = out/prompt_one.err
-output = out/prompt_one.out
-log = out/prompt_one.log
+error = out/$(Model)/prompt_one.err
+output = out/$(Model)/prompt_one.out
+log = out/$(Model)/prompt_one.log
 
 queue Args from args/$(Model)/nonfinetuned.txt
