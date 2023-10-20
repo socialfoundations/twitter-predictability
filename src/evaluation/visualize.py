@@ -4,7 +4,7 @@ from prompting import load_data, load_tokenizer
 from dotenv import load_dotenv
 from utils import get_prompt_results_path, to_color, color_text
 from sklearn.preprocessing import minmax_scale
-from constants.model import MODEL_TOKENIZER, MODEL_FULLNAME
+from utils.constants.model import MODEL_TOKENIZER, MODEL_FULLNAME
 
 load_dotenv()
 
