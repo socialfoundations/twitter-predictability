@@ -9,6 +9,7 @@ import wandb
 import tweepy
 from collections import Counter
 from datetime import datetime
+from bson.objectid import ObjectId
 
 # load environment variables (like the Twitter API bearer token) from .env file
 load_dotenv()
@@ -35,7 +36,8 @@ if __name__ == "__main__":
         config=config,
         mode="online",
         log_code=True,
-        # tags=["debug"],
+        tags=["v2.0"],
+        notes="Collecting peer tweets before the 250th subject tweeet.",
     )
     cfg = wandb.config
 
@@ -71,7 +73,10 @@ if __name__ == "__main__":
 
     with mongo_conn.start_session() as session:
         cursor = subjects_collection.find(
-            {"timeline_tweets_count": {"$gte": cfg["subject_tweets"]}},
+            {
+                "timeline_tweets_count": {"$gte": cfg["subject_tweets"]},
+                # "_id": {"$gte": ObjectId("63d71ff0d7f30964c3de355f")}, # last user that was processed, start here
+            },
             no_cursor_timeout=True,  # make sure there is a .close() at the end!
             session=session,
         )
@@ -84,6 +89,7 @@ if __name__ == "__main__":
                 "author_id": subject_id,
                 "referenced_tweets.0.type": {"$ne": "retweeted"},
                 "lang": "en",
+                "created_at": {"$lt": cfg["end_time"]},
             }
 
             mentions = Counter()
@@ -93,7 +99,9 @@ if __name__ == "__main__":
                 session=session,
             ).limit(cfg["subject_tweets"])
 
-            for t in t_cursor:
+            for i, t in enumerate(t_cursor):
+                if i == 250:
+                    peer_end_time = t["created_at"]
                 if "entities" in t and "mentions" in t["entities"]:
                     mentioned_ids = [
                         mention["id"] for mention in t["entities"]["mentions"]
@@ -110,6 +118,7 @@ if __name__ == "__main__":
                     "-- Processing rank-%d peer with %d mentions: %s"
                     % (rank, n_mentions, mentioned_id)
                 )
+
                 # skip collection for users that are already in the peers collection and have enough tweets
                 match = peers_collection.find_one(
                     {"id": mentioned_id},
@@ -117,7 +126,7 @@ if __name__ == "__main__":
                 )
                 if match:
                     main_logger.debug(
-                        "-- Peer already processed. Updating mentioned_by list with %s."
+                        "---- Peer already processed. Updating mentioned_by list with %s."
                         % subject_id
                     )
                     # add subject to mentioned_by list
@@ -133,16 +142,31 @@ if __name__ == "__main__":
                             }
                         },
                     )
-                    # continue
+                    # look at how many tweets we have from the peer already
+                    user_timeline_no_RT_en["author_id"] = mentioned_id
+                    user_timeline_no_RT_en["created_at"] = {"$lt": peer_end_time}
+                    n_tweets = timelines_collection.count_documents(
+                        user_timeline_no_RT_en,
+                        session=session,
+                    )
+                    main_logger.info(
+                        "---- %d tweets in collection from %s before %s."
+                        % (n_tweets, mentioned_id, peer_end_time)
+                    )
+
                     # skip collection if enough tweets
-                    if match["timeline_tweets_count"] >= cfg["tweets_per_peer"]:
+                    if n_tweets >= cfg["tweets_per_peer"]:
+                        main_logger.debug(
+                            "---- No further tweet collection needed for %s."
+                            % mentioned_id
+                        )
                         continue
 
                 # skip users that have been deleted / set to private / are protected etc.
                 result = utils.tweepy.access_user_data(client, user_id=mentioned_id)
                 if result is None or result["protected"]:
                     main_logger.warning(
-                        "-- Peer data could not be accessed. Skipping user."
+                        "---- Peer data could not be accessed. Skipping user."
                     )
                     continue
                 else:
@@ -151,64 +175,70 @@ if __name__ == "__main__":
                         users_collection, {"id": mentioned_id}
                     ):
                         main_logger.debug(
-                            "-- Peer not yet in users collection. Inserting..."
+                            "---- Peer not yet in users collection. Inserting..."
                         )
                         result["queried_at"] = datetime.utcnow().isoformat()
                         utils.mongo.insert_one(users_collection, result)
 
-                # look at how many tweets we have from the peer already
-                user_timeline_no_RT_en["author_id"] = mentioned_id
-                n_tweets = timelines_collection.count_documents(
-                    user_timeline_no_RT_en,
-                    session=session,
-                )
-                main_logger.debug(
-                    "-- %d tweets in collection from %s." % (n_tweets, mentioned_id)
-                )
-
-                if n_tweets < cfg["tweets_per_peer"]:
-                    num = cfg["tweets_per_peer"] - n_tweets
-                    main_logger.debug(
-                        "-- Collecting %d tweets for %s..." % (num, mentioned_id)
-                    )
+                # try both collection methods - if enough tweets then break out of loop
+                for coll_method in ["timeline", "full-archive"]:
+                    min_tweets = cfg["tweets_per_peer"] - n_tweets
 
                     if n_tweets == 0:
-                        end_time = cfg["end_time"]
+                        end_time = peer_end_time
                     else:
+                        # resume from oldest tweet
                         oldest_tweet = timelines_collection.find_one(
                             user_timeline_no_RT_en,
                             sort=[("_id", -1)],
                             session=session,
                         )
-                        end_time = oldest_tweet["created_at"]
+                        if oldest_tweet is not None:
+                            end_time = oldest_tweet["created_at"]
+                        else:
+                            end_time = peer_end_time
 
                     # get the peer's timeline
                     timeline, _ = utils.tweepy.get_user_tweets(
                         client,
-                        method=cfg["method"],
+                        method=coll_method,
                         user_id=mentioned_id,
-                        minimum=num,
+                        minimum=min_tweets
+                        if coll_method != "full-archive"
+                        else min_tweets + 10,
                         end_time=end_time,
                         exclude=cfg["exclude"],
                         filter_conditions=cfg["filter"],
+                        max_retries=3 if coll_method != "full-archive" else 0,
+                    )
+
+                    main_logger.info(
+                        "---- Collected %d tweets before %s for %s (%s method)..."
+                        % (len(timeline), end_time, mentioned_id, coll_method)
                     )
 
                     # save it to timelines collection
                     utils.mongo.insert_many(
                         timelines_collection, [tweet["data"] for tweet in timeline]
                     )
-                else:
-                    main_logger.debug(
-                        "-- No further tweet collection needed for %s." % mentioned_id
-                    )
 
-                # number of non-RT tweets after collection
+                    if len(timeline) >= min_tweets:
+                        break
+                    else:
+                        # 2023-05-17: sometimes the user timeline API ignores the exclude=['retweets'] and returns retweets...
+                        # count number of results that are **not** retweets
+                        n_tweets += len(
+                            [t for t in timeline if t["data"]["text"].startswith("RT ")]
+                        )
+
+                # TOTAL number of non-RT tweets after collection
+                user_timeline_no_RT_en["created_at"] = {"$lt": cfg["end_time"]}
                 n_tweets = timelines_collection.count_documents(
                     user_timeline_no_RT_en,
                     session=session,
                 )
                 main_logger.debug(
-                    "-- %d tweets in collection from %s." % (n_tweets, mentioned_id)
+                    "---- %d tweets in collection from %s." % (n_tweets, mentioned_id)
                 )
 
                 # save user into peer collection
