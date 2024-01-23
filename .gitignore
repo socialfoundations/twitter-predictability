@@ -11,3 +11,4 @@ src/network_analysis/gephi
 src/network_analysis/graph_files
 .ipynb_checkpoints
 out
+.VSCodeCounter/
