@@ -248,7 +248,9 @@ class DataTrainingArguments:
 
     do_rand_subjects_eval: bool = field(
         default=False,
-        metadata={"help": "Whether to also run periodical evaluation (while training) on the eval set of 100 random subjects. Don't forget to set --metric_for_best_model and --greater_is_better to the desired values."},
+        metadata={
+            "help": "Whether to also run periodical evaluation (while training) on the eval set of 100 random subjects. Don't forget to set --metric_for_best_model and --greater_is_better to the desired values."
+        },
     )
 
     def __post_init__(self):
@@ -454,7 +456,7 @@ def main():
             if not os.path.exists(training_args.output_dir):
                 os.mkdir(training_args.output_dir)
             fpath = os.path.join(training_args.output_dir, "rand_subjects.txt")
-            with open(fpath, 'w') as f:
+            with open(fpath, "w") as f:
                 for line in rand_users:
                     f.write(f"{line}\n")
             dsets = []
@@ -544,12 +546,12 @@ def main():
     # Preprocessing the datasets.
     def preprocessing_steps(examples):
         return preproc.end_with_eos_batch(
-                preproc.remove_extra_spaces_batch(
-                    preproc.remove_urls_batch(
-                        preproc.replace_special_characters_batch(examples)
-                    )
+            preproc.remove_extra_spaces_batch(
+                preproc.remove_urls_batch(
+                    preproc.replace_special_characters_batch(examples)
                 )
             )
+        )
 
     with training_args.main_process_first(desc="preprocess dataset"):
         if not data_args.streaming:
@@ -678,7 +680,10 @@ def main():
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(max_eval_samples))
         if "rand_subjects" in lm_datasets:
-            eval_datasets = {"base": eval_dataset, "rand_subjects": lm_datasets["rand_subjects"]}
+            eval_datasets = {
+                "base": eval_dataset,
+                "rand_subjects": lm_datasets["rand_subjects"],
+            }
         else:
             eval_datasets = eval_dataset
 
@@ -704,7 +709,7 @@ def main():
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
-		eval_dataset=eval_datasets if training_args.do_eval else None,
+        eval_dataset=eval_datasets if training_args.do_eval else None,
         tokenizer=tokenizer,
         # Data collator will default to DataCollatorWithPadding, so we change it.
         data_collator=default_data_collator,

@@ -54,10 +54,12 @@ class PromptingArguments:
         default=False,
         metadata={"help": "Load model in 8 bit precision."},
     )
-    
+
     load_in_4bit: bool = field(
         default=False,
-        metadata={"help": "Load model in 4 bit precision. Overrides --load_in_8bit if set."},
+        metadata={
+            "help": "Load model in 4 bit precision. Overrides --load_in_8bit if set."
+        },
     )
 
     tokenizer_id: str = field(
@@ -165,7 +167,9 @@ class PromptingArguments:
 
         if self.load_in_8bit and self.load_in_4bit:
             self.load_in_8bit = False
-            logger.warning("Both quantization methods (8 bit and 4 bit) were set to true. 4 bit overrides 8 bit, setting --load_in_8bit to False.")
+            logger.warning(
+                "Both quantization methods (8 bit and 4 bit) were set to true. 4 bit overrides 8 bit, setting --load_in_8bit to False."
+            )
 
 
 def load_data(mode: str, user_id: str, from_disk: bool):
@@ -185,7 +189,11 @@ def load_data(mode: str, user_id: str, from_disk: bool):
 
 
 def load_model(
-        device: str, model_id: str, offload_folder: str, load_in_8bit: bool = False, load_in_4bit: bool = False
+    device: str,
+    model_id: str,
+    offload_folder: str,
+    load_in_8bit: bool = False,
+    load_in_4bit: bool = False,
 ):
     device = torch.device(device)
     model = AutoModelForCausalLM.from_pretrained(
@@ -312,14 +320,17 @@ def _tweet_by_tweet_tokenization(data, tokenizer, mode):
     _tokenization_stats(
         text="".join(data["text"]), tokenizer=tokenizer, name="eval tweets"
     )
-    
+
     tokenizer.truncation_side = "right"
     tokenizer.padding_side = "right"
+
     def add_bos_token(x):
         return {"text": tokenizer.bos_token + x["text"]}
 
     def tokenize_func(x):
-        return tokenizer(x["text"], padding=True, return_tensors="pt", add_special_tokens=False)
+        return tokenizer(
+            x["text"], padding=True, return_tensors="pt", add_special_tokens=False
+        )
 
     if mode == "none":
         data = data.map(add_bos_token, keep_in_memory=True)
@@ -375,7 +386,9 @@ def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
 
     context_length_no_pad = res["attention_mask"].count_nonzero().item()
     if context_length_no_pad < context_len:
-        logger.warning(f"The provided context (of length {context_length_no_pad}) does not reach specified context length ({context_len}).")
+        logger.warning(
+            f"The provided context (of length {context_length_no_pad}) does not reach specified context length ({context_len})."
+        )
 
     return res
 
@@ -538,7 +551,9 @@ def main():
         nll_mean, nll_err = torch_compute_confidence_interval(nlls, confidence=0.9)
         nll_std = nlls.std(unbiased=True).item()
 
-        print(f"Negative log-likelihood (mean +/- ci, std): {nll_mean:.4f} +/- {nll_err:.4f}, {nll_std:.4f}")
+        print(
+            f"Negative log-likelihood (mean +/- ci, std): {nll_mean:.4f} +/- {nll_err:.4f}, {nll_std:.4f}"
+        )
         print(
             f"Perplexity range: ({np.exp(nll_mean-nll_err):.4f}, {np.exp(nll_mean+nll_err):.4f})"
         )
@@ -550,7 +565,9 @@ def main():
             )
             nll_std = nlls[mode].std(unbiased=True).item()
 
-            print(f"Negative log-likelihood (mean +/- ci, std): {nll_mean:.4f} +/- {nll_err:.4f}, {nll_std:.4f}")
+            print(
+                f"Negative log-likelihood (mean +/- ci, std): {nll_mean:.4f} +/- {nll_err:.4f}, {nll_std:.4f}"
+            )
             print(
                 f"Perplexity range: ({np.exp(nll_mean-nll_err):.4f}, {np.exp(nll_mean+nll_err):.4f})"
             )
