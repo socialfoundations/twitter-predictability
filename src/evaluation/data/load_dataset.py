@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def load_dataset(user_id, from_disk, data_path, control=""):
+def load_dataset(user_id, from_disk, data_path, control="single"):
     if from_disk:
         dl = SubjectDataLoaderFromDisk(user_id=user_id, data_path=data_path)
         return dl.load_data()
