@@ -51,6 +51,16 @@ class PromptingArguments:
         default="gpt2", metadata={"help": "The model that we would like evaluate on."}
     )
 
+    safetensors_model: bool = field(
+        default=False,
+        metadata={"help": "Load safetensors model."},
+    )
+
+    local_model: bool = field(
+        default=False,
+        metadata={"help": "Load local model from HF_HUB_CACHE."},
+    )
+
     load_in_8bit: bool = field(
         default=False,
         metadata={"help": "Load model in 8 bit precision."},
@@ -201,6 +211,8 @@ def load_data(mode: str, user_id: str, from_disk: bool, remove_mentions_hashtags
 def load_model(
     device: str,
     model_id: str,
+    safetensors: bool,
+    local:bool,
     offload_folder: str,
     load_in_8bit: bool = False,
     load_in_4bit: bool = False,
@@ -208,7 +220,8 @@ def load_model(
     device = torch.device(device)
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
-        use_safetensors=False,
+        use_safetensors=safetensors,
+        local_files_only=local,
         device_map="auto",
         offload_folder=offload_folder,
         load_in_8bit=load_in_8bit,
@@ -241,6 +254,8 @@ def _data_model_tokenizer(config: PromptingArguments):
     model = load_model(
         device=config.device,
         model_id=config.model_id,
+        safetensors=config.safetensors_model,
+        local=config.local_model,
         offload_folder=config.offload_folder,
         load_in_8bit=config.load_in_8bit,
     )
