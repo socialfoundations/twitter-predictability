@@ -1,9 +1,11 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import json
 import logging
 import os
 
 import numpy as np
-from dotenv import load_dotenv
 import torch
 from prompting import (
     PromptingArguments,
@@ -16,7 +18,6 @@ from transformers import HfArgumentParser
 from utils import get_subject_data_path, get_prompt_results_path
 from torch.cuda import OutOfMemoryError
 
-load_dotenv()
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARNING

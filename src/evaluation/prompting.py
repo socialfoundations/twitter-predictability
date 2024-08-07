@@ -1,18 +1,19 @@
+# load .env variables before loading torch, transformers libraries!!
+from dotenv import load_dotenv
+load_dotenv()
+
 import logging
 import warnings
 from dataclasses import dataclass, field
 from typing import Optional
-
 import numpy as np
 import torch
 from data import load_dataset
 from data.preprocessing import *
-from dotenv import load_dotenv
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
 from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
 from utils import get_subject_data_path
 
-load_dotenv()
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARNING
