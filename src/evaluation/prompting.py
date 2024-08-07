@@ -115,6 +115,13 @@ class PromptingArguments:
         },
     )
 
+    omit_mentions_hashtags: bool = field(
+        default=False,
+        metadata={
+            "help": "Whether to filter out @-mentions and hashtags from loaded tweets."
+        }
+    )
+
     seq_sep: str = field(
         default="\n", metadata={"help": "What token(s) to use to separate sequences."}
     )
@@ -173,7 +180,7 @@ class PromptingArguments:
             )
 
 
-def load_data(mode: str, user_id: str, from_disk: bool):
+def load_data(mode: str, user_id: str, from_disk: bool, remove_mentions_hashtags: bool):
     is_multi_control = mode in ["random_tweet", "random_user", "multi_control"]
     data = (
         load_dataset(
@@ -186,6 +193,8 @@ def load_data(mode: str, user_id: str, from_disk: bool):
         .map(remove_urls)
         .map(remove_extra_spaces)
     )
+    if remove_mentions_hashtags:
+        data = data.map(remove_mentions).map(remove_hashtags)
     return data
 
 
@@ -225,7 +234,7 @@ def _data_model_tokenizer(config: PromptingArguments):
 
     # load data
     data = load_data(
-        mode=config.mode, user_id=config.user_id, from_disk=config.from_disk
+        mode=config.mode, user_id=config.user_id, from_disk=config.from_disk, remove_mentions_hashtags=config.omit_mentions_hashtags
     )
 
     # load model

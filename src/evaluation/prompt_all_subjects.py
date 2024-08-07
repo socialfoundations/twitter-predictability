@@ -94,9 +94,9 @@ def main():
             model_postfix =  "-4bit"
             
         if script_args.test:
-            res_dir = get_prompt_results_path().joinpath("test" + model_postfix).joinpath(s_id)
+            res_dir = get_prompt_results_path(prompting_args.omit_mentions_hashtags).joinpath("test" + model_postfix).joinpath(s_id)
         else:
-            res_dir = get_prompt_results_path().joinpath(model_name + model_postfix).joinpath(s_id)
+            res_dir = get_prompt_results_path(prompting_args.omit_mentions_hashtags).joinpath(model_name + model_postfix).joinpath(s_id)
         if script_args.skip_if_exists:
             path_exists = os.path.exists(res_dir)
             if path_exists and os.listdir(res_dir):
