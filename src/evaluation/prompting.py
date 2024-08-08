@@ -258,6 +258,7 @@ def _data_model_tokenizer(config: PromptingArguments):
         local=config.local_model,
         offload_folder=config.offload_folder,
         load_in_8bit=config.load_in_8bit,
+        load_in_4bit=config.load_in_4bit
     )
 
     # load tokenizer
