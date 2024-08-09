@@ -11,7 +11,7 @@ import torch
 from data import load_dataset
 from data.preprocessing import *
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
-from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser
+from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, BitsAndBytesConfig
 from utils import get_subject_data_path
 
 
@@ -231,8 +231,7 @@ def load_model(
         local_files_only=local,
         device_map="auto",
         offload_folder=offload_folder,
-        load_in_8bit=load_in_8bit,
-        load_in_4bit=load_in_4bit,
+        quantization_config=BitsAndBytesConfig(load_in_8bit=load_in_8bit, load_in_4bit=load_in_4bit, llm_int8_enable_fp32_cpu_offload=True),
         trust_remote_code=True,
     )
     return model
