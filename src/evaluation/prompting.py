@@ -80,6 +80,13 @@ class PromptingArguments:
         },
     )
 
+    model_input_len: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "Specifies the maximal input length in tokens that the model can accept. If not set, tokenizer.model_max_length will be used."
+        }
+    )
+
     ctxt_len: Optional[int] = field(
         default=600,
         metadata={
@@ -420,7 +427,7 @@ def _tokenize_context(tokenizer, context_dataset, context_len, tweet_separator):
 
 
 def _tokenized_tweets_context(
-    mode, data, tokenizer, window_length, context_length, stride, seq_sep, strategy
+    mode, data, tokenizer, input_length, window_length, context_length, stride, seq_sep, strategy
 ):
     tokenized_tweets = _tokenize_eval_data(
         data["eval"],
@@ -434,11 +441,14 @@ def _tokenized_tweets_context(
 
     if strategy == "tweet_by_tweet":
         l_eval = len(tokenized_tweets["input_ids"][0])
-        # TODO: model max length is not set for some tokenizers...
-        if tokenizer.model_max_length < 1e6:
-            l_max = tokenizer.model_max_length
+        if input_length:
+            l_max = input_length
         else:
-            l_max = 4096
+            # in some models tokenizer.model_max_length is set to a very large number...
+            if tokenizer.model_max_length < 1e6:
+                l_max = tokenizer.model_max_length
+            else:
+                l_max = 4096
         if l_eval > l_max:
             raise ValueError(
                 f"Length of longest tokenized eval tweet ({l_eval})) exceeds maximum model sequence length ({l_max})!"
@@ -520,6 +530,7 @@ def user_nlls(
             mode,
             data,
             tokenizer=tokenizer,
+            input_length=config.model_input_len,
             window_length=window_length,
             context_length=context_length,
             stride=stride,
