@@ -5,7 +5,7 @@ import os
 import shutil
 
 
-def chunk_subjects(N, multi_control=True):
+def chunk_subjects(N: int, multi_control: bool = True):
     all_subjects = os.listdir(get_subject_data_path(multi_control))
 
     def chunks(l, n):
@@ -15,7 +15,7 @@ def chunk_subjects(N, multi_control=True):
 
     subject_chunks = chunks(all_subjects, N)
 
-    out_dir = here().joinpath("evaluation", "subjects_chunked")
+    out_dir = here().joinpath("subjects_chunked")
     out_dir.mkdir(exist_ok=True)  # create directory
 
     if any(out_dir.iterdir()):
