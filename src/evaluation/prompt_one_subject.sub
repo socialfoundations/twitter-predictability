@@ -1,17 +1,18 @@
 executable = scripts/$(Model)/prompt_one.sh
-arguments = --debug $(Args)
+arguments = --debug --tweet_by_tweet --load_in_8bit --batch_size $(Bs) $(Args)
 
 # hardware requirements
 request_gpus = 2
-request_cpus = 2
-request_memory = 32768
+request_cpus = 4
+request_memory = 128GB 
 request_disk = 200G   
-requirements = CUDACapability >= 7.0
-requirements = TARGET.CUDAGlobalMemoryMb > 50000
+#requirements = TARGET.CUDACapability >= 8.0
+#requirements = TARGET.CUDAGlobalMemoryMb > 30000
+requirements = TARGET.CUDADeviceName == "NVIDIA A100-SXM4-80GB"
 
 # other options
-error = out/$(Model)/prompt_one.err
-output = out/$(Model)/prompt_one.out
-log = out/$(Model)/prompt_one.log
+error = out/$(Model)/prompt_one_$(Bs).err
+output = out/$(Model)/prompt_one_$(Bs).out
+log = out/$(Model)/prompt_one_$(Bs).log
 
 queue Args from args/$(Model)/nonfinetuned.txt

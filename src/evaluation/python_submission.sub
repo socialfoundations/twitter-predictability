@@ -1,0 +1,16 @@
+executable = /home/mremeli/twitter-information-flow/virtualenvs/torch2_venv/bin/python
+#arguments = -m prompt_other --name cnbc --debug --model_id gpt2-xl
+#arguments = token_statistics.py chars_per_token --model llama-3-8b
+arguments = -m utils.result_utils tweet_start_indices --model llama-3-8b --finetuned True --omit_mentions_hashtags True
+
+request_gpus = 1
+request_cpus = 4
+request_memory = 64GB
+requirements = CUDACapability >= 8.0
+requirements = TARGET.CUDAGlobalMemoryMb > 20000
+
+error = out/$(LogName).err
+output = out/$(LogName).out
+log = out/$(LogName).log
+
+queue
