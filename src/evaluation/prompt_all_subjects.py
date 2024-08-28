@@ -64,6 +64,8 @@ def main():
     model = load_model(
         device=prompting_args.device,
         model_id=prompting_args.model_id,
+        safetensors=prompting_args.safetensors_model,
+        local=prompting_args.local_model,
         offload_folder=prompting_args.offload_folder,
         load_in_8bit=prompting_args.load_in_8bit,
         load_in_4bit=prompting_args.load_in_4bit,
@@ -113,12 +115,12 @@ def main():
                 for mode, nlls in results.items():
                     res_file = res_dir.joinpath(f"{mode}.npy")
                     with open(res_file, "wb") as f:
-                        np.save(f, nlls.numpy())
-            elif type(results) == torch.Tensor:
+                        np.save(f, nlls)
+            elif type(results) == np.ndarray:
                 mode = prompting_args.mode
                 res_file = res_dir.joinpath(f"{mode}.npy")
                 with open(res_file, "wb") as f:
-                    np.save(f, results.numpy())
+                    np.save(f, results)
             # save arguments (mode will be the last set mode, eg. 'random')
             json.dump(prompting_args.__dict__, open(res_dir.joinpath("args.json"), "w"))
         except FileNotFoundError as e:

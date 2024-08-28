@@ -19,5 +19,9 @@ def replace_special_characters(x):
     return {"text": text}
 
 
-def replace_mentions(x):
+def remove_mentions(x):
     return {"text": re.sub(r"@\S+", "", x["text"])}
+
+
+def remove_hashtags(x):
+    return {"text": re.sub(r"#\S+", "", x["text"])}

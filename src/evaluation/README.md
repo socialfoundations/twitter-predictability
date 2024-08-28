@@ -4,7 +4,7 @@
 
 Prints subject tweets with a heatmap-like background color. Color corresponds to magnitude of NLL.
 ```
-python -m visualization plot_NLLs --subject_id=\"<subject_id>\"
+python -m visualize plot_NLLs --subject_id=\"<subject_id>\"
 ```
 
 Other options:
@@ -18,7 +18,7 @@ Other options:
 
 Prints subject tweets with a heatmap-like background color. Color corresponds to magnitude of improvement on NLL.
 ```
-python -m visualization plot_improvement --subject_id=\"<subject_id>\"
+python -m visualize plot_improvement --subject_id=\"<subject_id>\"
 ```
 
 Other options:

@@ -4,15 +4,25 @@ from datasets import Dataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import numpy as np
+from utils import allocated_memory
+from typing import Union
+import logging
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARNING
+)
+logger = logging.getLogger("prompting")
 
 
 # From https://discuss.pytorch.org/t/what-is-the-proper-way-to-compute-95-confidence-intervals-with-pytorch-for-classification-and-regression/139398/2
 def torch_compute_confidence_interval(
-    data: torch.Tensor, confidence: float = 0.95
+    data: Union[torch.Tensor, np.ndarray], confidence: float = 0.95
 ) -> torch.Tensor:
     """
     Computes the confidence interval for a given survey of a data set.
     """
+    if type(data) == np.ndarray:
+        data = torch.from_numpy(data)
     n = len(data)
     mean: torch.Tensor = data.mean()
     # se: Tensor = scipy.stats.sem(data)  # compute standard error
@@ -90,9 +100,10 @@ def _batched_negative_log_likelihoods(
             "target_ids": target_ids,
         }
     ).with_format("torch")
-    batched_data = DataLoader(data, batch_size=batch_size)
+    batched_data = DataLoader(data, batch_size=batch_size, pin_memory=True, num_workers=2)
 
-    for batch in tqdm(batched_data, leave=False):
+    pbar = tqdm(batched_data, leave=False)
+    for batch in pbar:
         with torch.no_grad():
             outputs = model(
                 batch["input_ids"].to(device),
@@ -102,11 +113,14 @@ def _batched_negative_log_likelihoods(
             if token_level:
                 neg_log_likelihoods = _token_level_nlls(
                     logits=outputs.logits, target_ids=batch["target_ids"], device=device
-                )
+                ).cpu().detach().numpy()
                 nlls.extend(neg_log_likelihoods)
             else:
                 neg_log_likelihood = outputs.loss
                 nlls.append(neg_log_likelihood)
+
+            pbar.set_description(f"Allocated GPU memory: {allocated_memory():.2f}GB")
+            torch.cuda.empty_cache()
 
     return nlls
 
@@ -157,7 +171,7 @@ def _non_batched_negative_log_likelihoods(
             if token_level:
                 neg_log_likelihoods = _token_level_nlls(
                     logits=outputs.logits, target_ids=target_ids, device=device
-                )
+                ).cpu().detach().numpy()
                 nlls.extend(neg_log_likelihoods)
             else:
                 neg_log_likelihood = outputs.loss  # the loss is a cross-entropy loss

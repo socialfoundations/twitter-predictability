@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from utils import get_prompt_results_path, to_color, color_text
 from sklearn.preprocessing import minmax_scale
 from utils.constants.model import MODEL_TOKENIZER, MODEL_FULLNAME
+from token_statistics import per_token_improvement_subject
 
 load_dotenv()
 
@@ -70,15 +71,7 @@ def _plot_legend(values):
     print("Average (token-level): ", np.mean(values))
 
 def plot_improvement(subject_id, base="none", context="user", model="gpt2-xl", token_level=False):
-    user_res_path = get_prompt_results_path().joinpath(MODEL_FULLNAME[model]).joinpath(subject_id)
-    # load base
-    base_file = user_res_path.joinpath(f"{base}.npy")
-    base_nlls = np.load(base_file)
-    # load context
-    context_file = user_res_path.joinpath(f"{context}.npy")
-    context_nlls = np.load(context_file)
-    # calculate diff
-    diff = base_nlls - context_nlls
+    diff = per_token_improvement_subject(subject_id, base, context, model)
     
     # plot
     _plot_eval_tweets_colorized(subject_id, diff, model, token_level)

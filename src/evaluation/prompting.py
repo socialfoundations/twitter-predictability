@@ -12,7 +12,7 @@ from data import load_dataset
 from data.preprocessing import *
 from metrics import negative_log_likelihoods, torch_compute_confidence_interval
 from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, BitsAndBytesConfig
-from utils import get_subject_data_path
+from utils import get_subject_data_path, allocated_memory
 
 
 logging.basicConfig(
@@ -43,7 +43,7 @@ class PromptingArguments:
         default="cpu",
         metadata={
             "help": "What device to run experiments on.",
-            "choices": ["cpu", "cuda"],
+            "choices": ["cpu", "cuda", "cuda:0"],
         },
     )
 
@@ -197,7 +197,7 @@ class PromptingArguments:
             )
 
 
-def load_data(mode: str, user_id: str, from_disk: bool, remove_mentions_hashtags: bool):
+def load_data(mode: str, user_id: str, from_disk: bool, remove_mentions_hashtags: bool = False):
     is_multi_control = mode in ["random_tweet", "random_user", "multi_control"]
     data = (
         load_dataset(
@@ -225,15 +225,21 @@ def load_model(
     load_in_4bit: bool = False,
 ):
     device = torch.device(device)
+    quant_config = None
+    if load_in_8bit:
+        quant_config = BitsAndBytesConfig(load_in_8bit=load_in_8bit, llm_int8_enable_fp32_cpu_offload=True)
+    elif load_in_4bit:
+        quant_config = BitsAndBytesConfig(load_in_4bit=load_in_4bit, bnb_4bit_compute_dtype=torch.bfloat16)
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         use_safetensors=safetensors,
         local_files_only=local,
         device_map="auto",
         offload_folder=offload_folder,
-        quantization_config=BitsAndBytesConfig(load_in_8bit=load_in_8bit, load_in_4bit=load_in_4bit, llm_int8_enable_fp32_cpu_offload=True),
+        quantization_config=quant_config,
         trust_remote_code=True,
     )
+    logger.debug(f"Loaded model. Allocated GPU memory: {allocated_memory():.2f}GB")
     return model
 
 
@@ -507,7 +513,7 @@ def user_nlls(
         data, model, tokenizer = _data_model_tokenizer(config)
     else:
         data = load_data(
-            mode=config.mode, user_id=config.user_id, from_disk=config.from_disk
+            mode=config.mode, user_id=config.user_id, from_disk=config.from_disk, remove_mentions_hashtags=config.omit_mentions_hashtags
         )
 
     window_length, context_length, stride = None, None, 0
@@ -549,7 +555,8 @@ def user_nlls(
             token_level=config.token_level_nlls,
         )
 
-        nlls = torch.stack(nlls).cpu()
+        # nlls = torch.stack(nlls).cpu()
+        nlls = np.stack(nlls)
         logger.debug(f"NLLs shape: {nlls.shape}")
         return nlls
 
@@ -583,9 +590,9 @@ def main():
         logger.setLevel(logging.DEBUG)
     nlls = user_nlls(config=config)
 
-    if type(nlls) == torch.Tensor:
+    if type(nlls) == np.ndarray:
         nll_mean, nll_err = torch_compute_confidence_interval(nlls, confidence=0.9)
-        nll_std = nlls.std(unbiased=True).item()
+        nll_std = nlls.std()
 
         print(
             f"Negative log-likelihood (mean +/- ci, std): {nll_mean:.4f} +/- {nll_err:.4f}, {nll_std:.4f}"
@@ -599,7 +606,7 @@ def main():
             nll_mean, nll_err = torch_compute_confidence_interval(
                 nlls[mode], confidence=0.9
             )
-            nll_std = nlls[mode].std(unbiased=True).item()
+            nll_std = nlls[mode].std()
 
             print(
                 f"Negative log-likelihood (mean +/- ci, std): {nll_mean:.4f} +/- {nll_err:.4f}, {nll_std:.4f}"
