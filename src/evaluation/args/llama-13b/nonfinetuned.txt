@@ -5,7 +5,7 @@
 --ctxt_len 600 \
 --window_len 3496 \
 --batched \
---batch_size 2 \
+--batch_size 4 \
 --mode multi_control \
 --token_level_nlls \
 --seq_sep space \

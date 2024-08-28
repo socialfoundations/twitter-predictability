@@ -1,11 +1,10 @@
---user_id 10336942 \
 --from_disk \
---device cuda \
---model_id tiiuae/falcon-40b \ 
+--device cuda:0 \
+--model_id meta-llama/Meta-Llama-3-70B \
+--safetensors_model \
 --local_model \
---ctxt_len 600 \
 --batched \
---batch_size 4 \
+--model_input_len 4096 \
 --mode multi_control \
 --token_level_nlls \
 --seq_sep space \

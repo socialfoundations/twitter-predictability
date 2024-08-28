@@ -1,12 +1,9 @@
 --from_disk \
 --device cuda \
 --model_id meta-llama/Llama-2-70b-hf \
---local_model \
---ctxt_len 600 \
---window_len 3496 \
 --batched \
 --batch_size 2 \
---mode multi_control \
+--mode none \
 --token_level_nlls \
 --seq_sep space \
 --offload_folder /tmp/offload \

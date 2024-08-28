@@ -1,10 +1,7 @@
---user_id 617846755 \
 --from_disk \
 --device cuda \
 --model_id gpt2-xl \
---local_model \
---ctxt_len 600 \
 --batched \
 --batch_size 4 \
---mode multi_control \
+--mode none \
 --token_level_nlls \
