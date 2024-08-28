@@ -10,5 +10,5 @@ source $VIRTUAL_ENV
 
 echo "Running prompting..."
 echo "$@"
-python prompting.py $@
+python prompt_one.py $@
 
