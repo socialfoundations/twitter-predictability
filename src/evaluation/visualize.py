@@ -18,7 +18,7 @@ def _colorized_text(text_list, normalized_values):
     print()
 
 
-def _plot_eval_tweets_colorized(subject_id, values, model="gpt2-xl", token_level=False):
+def _plot_eval_tweets_colorized(subject_id, values, model="gpt2-xl", token_level=False, max_tweets=None):
     # normalize values that we are trying to plot
     norm_vals = minmax_scale(values)
 
@@ -27,7 +27,8 @@ def _plot_eval_tweets_colorized(subject_id, values, model="gpt2-xl", token_level
     tokenizer = load_tokenizer(MODEL_TOKENIZER[model])
 
     start_token = 0
-    for tweet in data["eval"]["text"]:
+    tweets = data["eval"]["text"] if max_tweets is None else data["eval"]["text"][:max_tweets]
+    for tweet in tweets:
         # chunk tweets into individual tokens
         tokenized_tweet = tokenizer.encode(tweet, add_special_tokens=False)
         tokens = tokenizer.convert_ids_to_tokens(tokenized_tweet)
@@ -62,29 +63,30 @@ def _plot_eval_tweets_colorized(subject_id, values, model="gpt2-xl", token_level
 
 def _plot_legend(values):
     min_, max_ = np.min(values), np.max(values)
-    color_text("Minimum: " + str(min_), to_color(min_)[:-1])
+    norm_vals = minmax_scale(values)
+    min_n_, max_n_ = np.min(norm_vals), np.max(norm_vals)
+    color_text("Minimum: " + str(min_), to_color(min_n_)[:-1])
     print()
-    color_text("Maximum: " + str(max_), to_color(max_)[:-1])
+    color_text("Maximum: " + str(max_), to_color(max_n_)[:-1])
     print()
-    color_text("Zero: " + str(0), to_color(0)[:-1])
+    color_text(f"Average (token-level): {np.mean(values):.2f}", to_color(np.mean(norm_vals))[:-1])
     print()
-    print("Average (token-level): ", np.mean(values))
 
-def plot_improvement(subject_id, base="none", context="user", model="gpt2-xl", token_level=False):
+def plot_improvement(subject_id, base="none", context="user", model="gpt2-xl", token_level=False, limit=10):
     diff = per_token_improvement_subject(subject_id, base, context, model)
     
     # plot
-    _plot_eval_tweets_colorized(subject_id, diff, model, token_level)
+    _plot_eval_tweets_colorized(subject_id, diff, model, token_level, limit)
     _plot_legend(diff)
 
-def plot_NLLs(subject_id, context="none", model="gpt2-xl", token_level=False):
+def plot_NLLs(subject_id, context="none", model="gpt2-xl", token_level=False, limit=10):
     # load calculated NLLs
     user_res_path = get_prompt_results_path().joinpath(MODEL_FULLNAME[model]).joinpath(subject_id)
     res_file = user_res_path.joinpath(f"{context}.npy")
     nlls = np.load(res_file)
 
     # plot
-    _plot_eval_tweets_colorized(subject_id, nlls, model, token_level)
+    _plot_eval_tweets_colorized(subject_id, nlls, model, token_level, limit)
     _plot_legend(nlls)
     
 
