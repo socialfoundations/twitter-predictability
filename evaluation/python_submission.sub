@@ -1,4 +1,4 @@
-executable = /home/mremeli/twitter-information-flow/virtualenvs/torch2_venv/bin/python
+executable = ../virtualenvs/torch2_venv/bin/python
 #arguments = -m prompt_other --name cnbc --debug --model_id gpt2-xl
 #arguments = token_statistics.py chars_per_token --model llama-3-8b
 arguments = -m utils.result_utils tweet_start_indices --model llama-3-8b --finetuned True --omit_mentions_hashtags True
