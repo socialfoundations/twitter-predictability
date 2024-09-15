@@ -180,7 +180,7 @@ def main():
         project=os.environ["WANDB_PROJECT"],
         entity=os.environ["WANDB_ENTITY"],
         job_type="user finetune",
-        tags=[finetuned_on_str(), "debug"],
+        tags=[finetuned_on_str()],
     )
     run.log_code()
     run.config.update(data_args)

@@ -95,6 +95,12 @@ class ModelArguments:
             )
         },
     )
+    safetensors_model: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "Load safetensors model."
+        },
+    )
     model_type: Optional[str] = field(
         default=None,
         metadata={
@@ -528,7 +534,7 @@ def main():
             revision=model_args.model_revision,
             use_auth_token=True if model_args.use_auth_token else None,
             torch_dtype=torch_dtype,
-            use_safetensors=False,
+            use_safetensors=model_args.safetensors_model,
         )
     else:
         model = AutoModelForCausalLM.from_config(config)
