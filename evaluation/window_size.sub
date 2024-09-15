@@ -1,0 +1,30 @@
+executable = scripts/$(Model)/prompt_one.sh
+arguments = --user_id $(SubjectId) --window_len $(WS) --name window_size --debug \
+--from_disk \
+--device cuda \
+--local_model \
+--model_id meta-llama/Llama-2-70b-hf \
+--batched \
+--batch_size 2 \
+--mode none \
+--token_level_nlls \
+--seq_sep space \
+--offload_folder /tmp/offload \
+--load_in_8bit
+
+# hardware requirements
+request_gpus = 2
+request_cpus = 4
+request_memory = 65536  
+request_disk = 200G   
+#requirements = CUDACapability >= 7.0
+#requirements = TARGET.CUDAGlobalMemoryMb > 50000
+requirements = TARGET.CUDADeviceName == "NVIDIA A100-SXM4-80GB"
+
+# other options
+error = out/$(Model)/window_size_$(WS).err
+output = out/$(Model)/window_size_$(WS).out
+log = out/$(Model)/window_size_$(WS).log
+
+queue 1 WS in 10, 19, 38, 74, 144, 282, 551, 1076, 2099, 4096
+#queue 1 WS in 10
