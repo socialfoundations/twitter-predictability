@@ -12,3 +12,6 @@ src/network_analysis/graph_files
 .ipynb_checkpoints
 out
 .VSCodeCounter/
+# ignore subject chunking files (used for job submission)
+chunk_*.txt
+*.pdf
