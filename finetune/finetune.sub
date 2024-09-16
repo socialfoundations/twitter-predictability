@@ -1,0 +1,22 @@
+# submission file
+
+executable = finetune.sh 
+arguments = $(Args)
+
+# hardware requirements
+request_gpus = 1
+request_cpus = 1
+request_memory = 16384
+request_disk = 50G   
+# architecture: Volta, Ampere or newer
+requirements = CUDACapability >= 7.0
+requirements = TARGET.CUDAGlobalMemoryMb > 50000
+
+# other options
+error = output.err
+output = output.out
+log = output.log
+
+#getenv = True
+
+queue Args from arguments.txt

@@ -1,0 +1,29 @@
+# submission file
+
+executable = user_finetune.sh 
+arguments = $(Args) --subject_id $(User) 
+
+# hardware requirements
+request_gpus = 1
+request_cpus = 1
+request_memory = 16384
+request_disk = 50G   
+# architecture: Volta, Ampere or newer
+#requirements = CUDACapability >= 7.0
+requirements = TARGET.CUDAGlobalMemoryMb > 35000
+
+# other options
+#error = output.err
+#output = output.out
+#log = output.log
+
+#getenv = True
+
+# set to desired user
+#User = 514070914
+#User = 850079111657779205
+#User = 72768002  
+#User = 1135298926641369089 
+
+queue Args from user_finetune_args.txt
+

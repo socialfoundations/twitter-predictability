@@ -1,0 +1,22 @@
+--model_name_or_path $BASE_MODEL \
+--tokenizer_name gpt2 \
+--train_file $TWEETS_10M_PATH \
+--output_dir $FINETUNED_MODEL_PATH \
+--lr_scheduler_type constant \
+--do_train \
+--do_eval \
+--per_device_train_batch_size 2 \
+--dataloader_drop_last \
+--report_to wandb \
+--log_level debug \
+--evaluation_strategy steps \
+--eval_steps 0.1 \
+--fp16 \
+--save_strategy steps \
+--save_steps 0.1 \
+--save_total_limit 5 \
+--do_rand_subjects_eval \
+--load_best_model_at_end \
+--metric_for_best_model eval_base_loss \
+--greater_is_better False \
+--num_train_epochs 1 \
