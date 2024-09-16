@@ -3,7 +3,6 @@ MODEL_HF_ID = {
     "llama-70b": "meta-llama/Llama-2-70b-hf",
     "falcon-40b": "tiiuae/falcon-40b",
     "llama-3-8b": "meta-llama/Meta-Llama-3-8B",
-    "llama-3-70b": "meta-llama/Meta-Llama-3-70B",
 }
 
 MODEL_TOKENIZER = {
@@ -11,7 +10,6 @@ MODEL_TOKENIZER = {
     "llama-70b": "meta-llama/Llama-2-70b-hf",
     "falcon-40b": "tiiuae/falcon-40b",
     "llama-3-8b": "meta-llama/Meta-Llama-3-8B",
-    "llama-3-70b": "meta-llama/Meta-Llama-3-70B",
 }
 
 MODEL_FULLNAME = {
@@ -19,7 +17,6 @@ MODEL_FULLNAME = {
     "llama-70b": "Llama-2-70b-hf-8bit",
     "falcon-40b": "falcon-40b-8bit",
     "llama-3-8b": "Meta-Llama-3-8B-8bit",
-    "llama-3-70b": "Meta-Llama-3-70B-8bit",
 }
 
 MODEL_FULLNAME_FINETUNED = {
