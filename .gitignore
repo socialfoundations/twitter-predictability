@@ -4,13 +4,15 @@
 artifacts/
 wandb/
 logs/
+*.err
+*.out
 *.log
 __pycache__/
-src/test/converter_diffs/
-src/network_analysis/gephi
-src/network_analysis/graph_files
+test/
+network_analysis/gephi
+network_analysis/graph_files
 .ipynb_checkpoints
-out
+out/
 .VSCodeCounter/
 # ignore subject chunking files (used for job submission)
 chunk_*.txt
