@@ -1,0 +1,22 @@
+# The following environment variables are needed to run our experiments
+# Fill out, rename to .env and run `source .env`
+
+# wandb
+WANDB_ENTITY= # name
+WANDB_PROJECT= # name
+
+# HF forking warning
+# https://github.com/huggingface/transformers/issues/5486 
+TOKENIZERS_PARALLELISM=false
+
+# For submission scripts
+MODEL_SRC= # path 
+MODEL_DST= # path 
+DATASET_SRC= # path 
+VIRTUAL_ENV= # path 
+SUBJECT_DATA_PATH= # path 
+
+# for arguments
+BASE_MODEL= # name
+TWEETS_10M_PATH= # path 
+FINETUNED_MODEL_PATH= # path 

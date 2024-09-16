@@ -1,0 +1,19 @@
+# The following environment variables are needed to run our experiments
+# Fill out, rename to .env and run `source .env`
+
+# transformers environment variables: https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfhome
+HF_HOME= # path
+HF_HUB_CACHE= # path
+HF_TOKEN= # token
+
+# HF forking warning
+# https://github.com/huggingface/transformers/issues/5486 
+TOKENIZERS_PARALLELISM=false
+
+# For submission scripts
+MODEL_SRC= # path
+MODEL_DST= # path
+VIRTUAL_ENV= # path
+OPTIMUM_ENV= # path
+FINETUNED_GPT2_PATH= # path
+FINETUNED_LLAMA3_PATH= # path

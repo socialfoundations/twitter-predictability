@@ -1,0 +1,13 @@
+# The following environment variables are needed to run our experiments
+# Fill out, rename to .env and run `source .env`
+
+# Twitter API
+BEARER_TOKEN= # Twitter API token
+
+# MongoDB
+MONGO_CONN= # MongoDB address
+
+# For email notifications while running scripts
+EMAIL_FROM= # email
+EMAIL_TO= # email
+EMAIL_PASSWORD= # passwd
