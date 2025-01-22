@@ -1,5 +1,5 @@
 # Tweet Predictability
-Code repository of arxiv preprint "**Limits to Predicting Online Speech Using Large Language Models**". We study the predictability of online speech on Twitter. The significance of studying predictability is far-reaching; it helps us frame questions such as social influence, information diffusion and predicting sensitive author information.
+Code repository of "**Limits to Predicting Online Speech Using Large Language Models**". We study the predictability of online speech on Twitter. The significance of studying predictability is far-reaching; it helps us frame questions such as social influence, information diffusion and predicting sensitive author information.
 
 Using **6.25M tweets** from **>5000 users** as the base of our study and with **language models of up to 70B parameters**, we find that **users' own history is most predictive of their future posts**.
 We contrast this with posts from their social circle, and find that they consistently contain less predictive information. This result replicates across models and experimental methods (in-context learning as well as finetuning).
